@@ -1,0 +1,636 @@
+{% extends 'crm/base.html' %}
+{% load custom_filters %}
+{% load humanize %}
+
+{% block title %}Reports & Analytics - Advisor CRM{% endblock %}
+{% block page_title %}Reports & Analytics Dashboard{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex gap-2">
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reportModal">
+        <i class="bi bi-gear me-2"></i>Customize Report
+    </button>
+    <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-download me-2"></i>Export
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="exportReport('pdf')"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</a></li>
+            <li><a class="dropdown-item" href="#" onclick="exportReport('excel')"><i class="bi bi-file-earmark-excel me-2"></i>Excel</a></li>
+            <li><a class="dropdown-item" href="#" onclick="exportReport('csv')"><i class="bi bi-file-earmark-text me-2"></i>CSV</a></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Date Range Selector -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h6 class="mb-0">Report Period: {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}</h6>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary btn-sm active">Last 30 Days</button>
+                        <button class="btn btn-outline-secondary btn-sm">Last Quarter</button>
+                        <button class="btn btn-outline-secondary btn-sm">Last Year</button>
+                        <button class="btn btn-outline-secondary btn-sm">Custom</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-0">Total Revenue</h6>
+                            <h3 class="mt-2 mb-0">£{{ total_revenue|default:0|floatformat:0|intcomma }}</h3>
+                            <span class="text-success small">
+                                <i class="bi bi-arrow-up"></i> {{ revenue_growth|default:0 }}% vs previous
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-currency-pound display-4 text-primary opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-0">New Policies</h6>
+                            <h3 class="mt-2 mb-0">{{ new_policies|default:0|intcomma }}</h3>
+                            <span class="text-success small">
+                                <i class="bi bi-arrow-up"></i> {{ policy_growth|default:0 }}% growth
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-file-earmark-plus display-4 text-success opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-0">Renewal Rate</h6>
+                            <h3 class="mt-2 mb-0">{{ renewal_rate|default:0 }}%</h3>
+                            <span class="text-{% if renewal_change > 0 %}success{% else %}danger{% endif %} small">
+                                <i class="bi bi-arrow-{% if renewal_change > 0 %}up{% else %}down{% endif %}"></i> 
+                                {{ renewal_change|default:0 }}% change
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-arrow-repeat display-4 text-info opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-0">Avg. Commission</h6>
+                            <h3 class="mt-2 mb-0">£{{ avg_commission|default:0|floatformat:0|intcomma }}</h3>
+                            <span class="text-success small">
+                                <i class="bi bi-arrow-up"></i> {{ commission_growth|default:0 }}% increase
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-graph-up display-4 text-warning opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional KPI Cards for New Insights -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-0">Mortgage Applications</h6>
+                            <h3 class="mt-2 mb-0">{{ mortgage_applications|default:0|intcomma }}</h3>
+                            <span class="text-{% if mortgage_growth > 0 %}success{% else %}danger{% endif %} small">
+                                <i class="bi bi-arrow-{% if mortgage_growth > 0 %}up{% else %}down{% endif %}"></i> 
+                                {{ mortgage_growth|default:0 }}% growth
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-house display-4 text-info opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-0">Avg. Loan Amount</h6>
+                            <h3 class="mt-2 mb-0">£{{ avg_loan_amount|default:0|floatformat:0|intcomma }}</h3>
+                            <span class="text-{% if loan_amount_change > 0 %}success{% else %}danger{% endif %} small">
+                                <i class="bi bi-arrow-{% if loan_amount_change > 0 %}up{% else %}down{% endif %}"></i> 
+                                {{ loan_amount_change|default:0 }}% change
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-currency-exchange display-4 text-success opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-0">Application Success Rate</h6>
+                            <h3 class="mt-2 mb-0">{{ success_rate|default:0 }}%</h3>
+                            <span class="text-{% if success_rate_change > 0 %}success{% else %}danger{% endif %} small">
+                                <i class="bi bi-arrow-{% if success_rate_change > 0 %}up{% else %}down{% endif %}"></i> 
+                                {{ success_rate_change|default:0 }}% change
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-check-circle display-4 text-success opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-0">Pending Documents</h6>
+                            <h3 class="mt-2 mb-0">{{ pending_documents|default:0|intcomma }}</h3>
+                            <span class="text-{% if pending_docs_change > 0 %}danger{% else %}success{% endif %} small">
+                                <i class="bi bi-arrow-{% if pending_docs_change > 0 %}up{% else %}down{% endif %}"></i> 
+                                {{ pending_docs_change|default:0 }}% change
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-file-earmark display-4 text-warning opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Revenue Trend</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Product Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="productChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Charts Row -->
+    <div class="row mb-4">
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Application Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="applicationStatusChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Commission by Type</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="commissionTypeChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Top Performing Advisors</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for advisor in top_advisors %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ advisor.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ advisor.policies }} policies</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">£{{ advisor.commission|floatformat:0 }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Renewal Performance</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="renewalChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mortgage Performance Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Mortgage Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <h4>{{ mortgage_completion_rate|default:0 }}%</h4>
+                            <p class="text-muted mb-0">Completion Rate</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4>£{{ avg_mortgage_commission|default:0|floatformat:0 }}</h4>
+                            <p class="text-muted mb-0">Avg. Mortgage Commission</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4>{{ top_mortgage_lender.lender|default:"N/A" }}</h4>
+                            <p class="text-muted mb-0">Top Lender ({{ top_mortgage_lender.count|default:0 }})</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4>{{ mortgage_types_popular.type|default:"N/A" }}</h4>
+                            <p class="text-muted mb-0">Most Popular Type ({{ mortgage_types_popular.count|default:0 }})</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Status Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Document Status Overview</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for doc_type, count in document_status.items %}
+                        <div class="col-md-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">{{ doc_type }}</span>
+                                <span class="badge bg-{% if doc_type == 'Received' %}success{% elif doc_type == 'Requested' %}warning{% elif doc_type == 'Required' %}danger{% else %}info{% endif %} rounded-pill">
+                                    {{ count }}
+                                </span>
+                            </div>
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div class="progress-bar bg-{% if doc_type == 'Received' %}success{% elif doc_type == 'Requested' %}warning{% elif doc_type == 'Required' %}danger{% else %}info{% endif %}" 
+                                     style="width: {% widthratio count document_status_total 100 %}%"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Reports Table -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">Policy Performance Details</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Policy Type</th>
+                            <th>Count</th>
+                            <th>Revenue</th>
+                            <th>Avg. Premium</th>
+                            <th>Renewal Rate</th>
+                            <th>Growth</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for policy in policy_performance %}
+                        <tr>
+                            <td><strong>{{ policy.type }}</strong></td>
+                            <td>{{ policy.count }}</td>
+                            <td>£{{ policy.revenue|floatformat:0 }}</td>
+                            <td>£{{ policy.avg_premium|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge bg-{% if policy.renewal_rate > 80 %}success{% elif policy.renewal_rate > 60 %}warning{% else %}danger{% endif %}">
+                                    {{ policy.renewal_rate }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-{% if policy.growth > 0 %}success{% else %}danger{% endif %}">
+                                    <i class="bi bi-arrow-{% if policy.growth > 0 %}up{% else %}down{% endif %}"></i>
+                                    {{ policy.growth }}%
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Renewals Table -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h6 class="mb-0">Upcoming Renewals (Next 30 Days)</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Policy Number</th>
+                            <th>Customer</th>
+                            <th>Policy Type</th>
+                            <th>Renewal Date</th>
+                            <th>Premium</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for renewal in upcoming_renewals %}
+                        <tr>
+                            <td>{{ renewal.policy_number }}</td>
+                            <td>{{ renewal.customer }}</td>
+                            <td>{{ renewal.policy_type }}</td>
+                            <td>{{ renewal.renewal_date|date:"M d, Y" }}</td>
+                            <td>£{{ renewal.premium_amount|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge bg-{% if renewal.days_until_renewal < 7 %}danger{% elif renewal.days_until_renewal < 14 %}warning{% else %}info{% endif %}">
+                                    {{ renewal.days_until_renewal }} days
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No upcoming renewals in the next 30 days</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Customization Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Customize Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reportForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date Range</label>
+                                <select class="form-select" name="date_range">
+                                    <option value="30">Last 30 Days</option>
+                                    <option value="90">Last Quarter</option>
+                                    <option value="365">Last Year</option>
+                                    <option value="custom">Custom Range</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Report Type</label>
+                                <select class="form-select" name="report_type">
+                                    <option value="summary">Summary Report</option>
+                                    <option value="detailed">Detailed Report</option>
+                                    <option value="comparison">Comparison Report</option>
+                                    <option value="mortgage">Mortgage Focus</option>
+                                    <option value="insurance">Insurance Focus</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Product Types</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="life" checked>
+                                    <label class="form-check-label">Life Insurance</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="home" checked>
+                                    <label class="form-check-label">Home Insurance</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="car" checked>
+                                    <label class="form-check-label">Car Insurance</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="mortgage" checked>
+                                    <label class="form-check-label">Mortgages</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Metrics</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="revenue" checked>
+                                    <label class="form-check-label">Revenue</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="policies" checked>
+                                    <label class="form-check-label">Policy Count</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="renewals" checked>
+                                    <label class="form-check-label">Renewal Rate</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="commissions" checked>
+                                    <label class="form-check-label">Commissions</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Advisor Filter</label>
+                                <select class="form-select" name="advisor">
+                                    <option value="all">All Advisors</option>
+                                    {% for advisor in all_advisors %}
+                                    <option value="{{ advisor.id }}">{{ advisor.get_full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Status Filter</label>
+                                <select class="form-select" name="status">
+                                    <option value="all">All Statuses</option>
+                                    <option value="active">Active Only</option>
+                                    <option value="pending">Pending Only</option>
+                                    <option value="completed">Completed Only</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="generateCustomReport()">Generate Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Chart initialization and other JavaScript functionality would go here
+function exportReport(format) {
+    alert(`Exporting report as ${format.toUpperCase()}`);
+}
+
+function generateCustomReport() {
+    const form = document.getElementById('reportForm');
+    alert('Generating custom report with selected parameters');
+    $('#reportModal').modal('hide');
+}
+
+// Initialize charts
+document.addEventListener('DOMContentLoaded', function() {
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            datasets: [{
+                label: 'Revenue',
+                data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        }
+    });
+
+    // Product Distribution Chart
+    const productCtx = document.getElementById('productChart').getContext('2d');
+    new Chart(productCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Life Insurance', 'Home Insurance', 'Car Insurance', 'Health Insurance', 'Mortgages'],
+            datasets: [{
+                data: [30, 20, 15, 15, 20],
+                backgroundColor: ['#0d6efd', '#6f42c1', '#20c997', '#fd7e14', '#ffc107']
+            }]
+        }
+    });
+
+    // Application Status Chart
+    const applicationStatusCtx = document.getElementById('applicationStatusChart').getContext('2d');
+    new Chart(applicationStatusCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Submitted', 'Under Review', 'Approved', 'Declined', 'Completed'],
+            datasets: [{
+                label: 'Applications',
+                data: [15, 8, 12, 3, 10],
+                backgroundColor: ['#0d6efd', '#6f42c1', '#20c997', '#dc3545', '#fd7e14']
+            }]
+        }
+    });
+
+    // Commission Type Chart
+    const commissionTypeCtx = document.getElementById('commissionTypeChart').getContext('2d');
+    new Chart(commissionTypeCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Mortgage', 'Insurance', 'Renewal', 'Referral'],
+            datasets: [{
+                data: [45, 35, 15, 5],
+                backgroundColor: ['#0d6efd', '#20c997', '#fd7e14', '#6f42c1']
+            }]
+        }
+    });
+});
+</script>
+
+<style>
+.card-kpi {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s ease;
+}
+
+.card-kpi:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+</style>
+{% endblock %}

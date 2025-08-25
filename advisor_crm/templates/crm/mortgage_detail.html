@@ -1,0 +1,317 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Mortgage {{ mortgage.mortgage_id }} - Advisor CRM{% endblock %}
+{% block page_title %}Mortgage Details{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'mortgage_list' %}" class="btn btn-outline-primary btn-action">
+        <i class="bi bi-arrow-left-circle me-2"></i>Back to Mortgages
+    </a>
+    <a href="{% url 'mortgage_update' mortgage.pk %}" class="btn btn-primary btn-action">
+        <i class="bi bi-pencil-square me-2"></i>Edit Mortgage
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Mortgage Information Card -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-house me-2"></i>Property Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Property Address:</strong><br>
+                    {{ mortgage.property_address|linebreaks }}
+                </div>
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>City:</strong><br>
+                        {{ mortgage.property_city|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>State:</strong><br>
+                        {{ mortgage.property_state|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Postal Code:</strong><br>
+                        {{ mortgage.property_postal_code|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Property Type:</strong><br>
+                        {{ mortgage.property_type|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Purpose:</strong><br>
+                        {{ mortgage.purpose }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Information Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person me-2"></i>Customer Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Customer:</strong><br>
+                        {{ mortgage.customer.first_name }} {{ mortgage.customer.last_name }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Email:</strong><br>
+                        {{ mortgage.customer.email }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Phone:</strong><br>
+                        {{ mortgage.customer.phone|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Advisor:</strong><br>
+                        {{ mortgage.advisor.get_full_name|default:mortgage.advisor.username }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Information Card -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-currency-pound me-2"></i>Financial Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Property Value:</strong><br>
+                        £{{ mortgage.property_value|floatformat:2 }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Loan Amount:</strong><br>
+                        £{{ mortgage.loan_amount|floatformat:2 }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Down Payment:</strong><br>
+                        £{{ mortgage.down_payment|floatformat:2|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>LTV Ratio:</strong><br>
+                        {{ mortgage.loan_to_value_ratio|floatformat:2 }}%
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Interest Rate:</strong><br>
+                        {{ mortgage.interest_rate|floatformat:3 }}%
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Monthly Payment:</strong><br>
+                        £{{ mortgage.monthly_payment|floatformat:2|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Loan Term:</strong><br>
+                        {{ mortgage.loan_term }} years
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Broker Fee:</strong><br>
+                        £{{ mortgage.broker_fee|floatformat:2|default:"-" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mortgage Details Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear me-2"></i>Mortgage Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Mortgage Type:</strong><br>
+                        {{ mortgage.mortgage_type }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Lender:</strong><br>
+                        {{ mortgage.lender|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Status:</strong><br>
+                        <span class="badge bg-{% if mortgage.mortgage_status == 'Approved' %}success{% elif mortgage.mortgage_status == 'Completed' %}success{% elif mortgage.mortgage_status == 'Application' %}warning{% else %}secondary{% endif %}">
+                            {{ mortgage.mortgage_status }}
+                        </span>
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Application Date:</strong><br>
+                        {{ mortgage.application_date|date:"M d, Y"|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Completion Date:</strong><br>
+                        {{ mortgage.completion_date|date:"M d, Y"|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Next Review:</strong><br>
+                        {{ mortgage.next_review_date|date:"M d, Y"|default:"-" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-journal-text me-2"></i>Notes
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if mortgage.notes %}
+                    {{ mortgage.notes|linebreaks }}
+                {% else %}
+                    <p class="text-muted">No notes available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Mortgage Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <!-- Created -->
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <i class="bi bi-plus-circle-fill"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Mortgage Created</h6>
+                                    <p class="mb-0 text-muted">Initial mortgage record created in system</p>
+                                </div>
+                                <small class="text-muted">{{ mortgage.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Application Submitted -->
+                    {% if mortgage.application_date %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <i class="bi bi-send-fill"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Application Submitted</h6>
+                                    <p class="mb-0 text-muted">Mortgage application sent to lender</p>
+                                </div>
+                                <small class="text-muted">{{ mortgage.application_date|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Status Updates -->
+                    {% if mortgage.mortgage_status != 'Enquiry' %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Status Changed</h6>
+                                    <p class="mb-0 text-muted">Current status: 
+                                        <span class="badge bg-{% if mortgage.mortgage_status == 'Approved' %}success{% elif mortgage.mortgage_status == 'Completed' %}success{% elif mortgage.mortgage_status == 'Application' %}warning{% else %}secondary{% endif %}">
+                                            {{ mortgage.mortgage_status }}
+                                        </span>
+                                    </p>
+                                </div>
+                                <small class="text-muted">Ongoing</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Completion -->
+                    {% if mortgage.completion_date %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Mortgage Completed</h6>
+                                    <p class="mb-0 text-muted">Mortgage process finalized</p>
+                                </div>
+                                <small class="text-muted">{{ mortgage.completion_date|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Last Updated -->
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <i class="bi bi-pencil-fill"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Last Updated</h6>
+                                    <p class="mb-0 text-muted">Record modifications</p>
+                                </div>
+                                <small class="text-muted">{{ mortgage.updated_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Next Review -->
+                    {% if mortgage.next_review_date %}
+                    <div class="timeline-item future">
+                        <div class="timeline-marker">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Next Review Scheduled</h6>
+                                    <p class="mb-0 text-muted">Upcoming mortgage review</p>
+                                </div>
+                                <small class="text-muted">{{ mortgage.next_review_date|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

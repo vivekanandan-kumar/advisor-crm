@@ -1,0 +1,318 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit Insurance Policy{% else %}Add New Insurance Policy{% endif %} - Advisor CRM{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Edit Insurance Policy{% else %}Add New Insurance Policy{% endif %}{% endblock %}
+
+{% block page_actions %}
+<a href="{% if form.instance.pk %}{% url 'insurance_detail' form.instance.pk %}{% else %}{% url 'insurance_list' %}{% endif %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> Back to {% if form.instance.pk %}Details{% else %}Policies{% endif %}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="insuranceForm">
+                    {% csrf_token %}
+                    
+                    <!-- Customer & Policy Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-person me-2"></i>Customer & Policy Information
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_customer" class="form-label">Customer <span class="text-danger">*</span></label>
+                            {{ form.customer }}
+                            {% if form.customer.errors %}
+                                <div class="text-danger">{{ form.customer.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_policy_type" class="form-label">Policy Type <span class="text-danger">*</span></label>
+                            {{ form.policy_type }}
+                            {% if form.policy_type.errors %}
+                                <div class="text-danger">{{ form.policy_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_policy_number" class="form-label">Policy Number</label>
+                            {{ form.policy_number }}
+                            <small class="text-muted">Leave blank if policy number is not yet assigned</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_insurance_company" class="form-label">Insurance Company <span class="text-danger">*</span></label>
+                            {{ form.insurance_company }}
+                            {% if form.insurance_company.errors %}
+                                <div class="text-danger">{{ form.insurance_company.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Coverage & Premium Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-currency-pound me-2"></i>Coverage & Premium
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_coverage_amount" class="form-label">Coverage Amount <span class="text-danger">*</span></label>
+                            {{ form.coverage_amount }}
+                            {% if form.coverage_amount.errors %}
+                                <div class="text-danger">{{ form.coverage_amount.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_premium_amount" class="form-label">Premium Amount <span class="text-danger">*</span></label>
+                            {{ form.premium_amount }}
+                            {% if form.premium_amount.errors %}
+                                <div class="text-danger">{{ form.premium_amount.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_premium_frequency" class="form-label">Premium Frequency <span class="text-danger">*</span></label>
+                            {{ form.premium_frequency }}
+                            {% if form.premium_frequency.errors %}
+                                <div class="text-danger">{{ form.premium_frequency.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_commission_rate" class="form-label">Commission Rate (%)</label>
+                            {{ form.commission_rate }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_commission_amount" class="form-label">Commission Amount</label>
+                            {{ form.commission_amount }}
+                        </div>
+                    </div>
+                    
+                    <!-- Policy Dates -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-calendar me-2"></i>Policy Dates
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_policy_start_date" class="form-label">Policy Start Date <span class="text-danger">*</span></label>
+                            {{ form.policy_start_date }}
+                            {% if form.policy_start_date.errors %}
+                                <div class="text-danger">{{ form.policy_start_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_policy_end_date" class="form-label">Policy End Date</label>
+                            {{ form.policy_end_date }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_renewal_date" class="form-label">Renewal Date</label>
+                            {{ form.renewal_date }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_next_review_date" class="form-label">Next Review Date</label>
+                            {{ form.next_review_date }}
+                        </div>
+                    </div>
+                    
+                    <!-- Policy Details -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-gear me-2"></i>Policy Details
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_policy_status" class="form-label">Policy Status <span class="text-danger">*</span></label>
+                            {{ form.policy_status }}
+                            {% if form.policy_status.errors %}
+                                <div class="text-danger">{{ form.policy_status.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_underwriting_class" class="form-label">Underwriting Class</label>
+                            {{ form.underwriting_class }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="id_beneficiary" class="form-label">Beneficiary</label>
+                            {{ form.beneficiary }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch mt-4">
+                                {{ form.automatic_renewal }}
+                                <label class="form-check-label" for="id_automatic_renewal">Automatic Renewal</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-journal-text me-2"></i>Additional Information
+                            </h5>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label for="id_notes" class="form-label">Notes</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% if form.instance.pk %}{% url 'insurance_detail' form.instance.pk %}{% else %}{% url 'insurance_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if form.instance.pk %}Update Policy{% else %}Create Policy{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form validation
+        const insuranceForm = document.getElementById('insuranceForm');
+        if (insuranceForm) {
+            insuranceForm.addEventListener('submit', function(e) {
+                const customer = document.getElementById('id_customer');
+                const policyType = document.getElementById('id_policy_type');
+                const insuranceCompany = document.getElementById('id_insurance_company');
+                const coverageAmount = document.getElementById('id_coverage_amount');
+                const premiumAmount = document.getElementById('id_premium_amount');
+                const premiumFrequency = document.getElementById('id_premium_frequency');
+                const policyStartDate = document.getElementById('id_policy_start_date');
+                const policyStatus = document.getElementById('id_policy_status');
+                
+                if (customer && !customer.value) {
+                    e.preventDefault();
+                    alert('Please select a customer.');
+                    customer.focus();
+                    return false;
+                }
+                
+                if (policyType && !policyType.value) {
+                    e.preventDefault();
+                    alert('Please select a policy type.');
+                    policyType.focus();
+                    return false;
+                }
+                
+                if (insuranceCompany && !insuranceCompany.value.trim()) {
+                    e.preventDefault();
+                    alert('Please enter an insurance company.');
+                    insuranceCompany.focus();
+                    return false;
+                }
+                
+                if (coverageAmount && (!coverageAmount.value || parseFloat(coverageAmount.value) <= 0)) {
+                    e.preventDefault();
+                    alert('Please enter a valid coverage amount.');
+                    coverageAmount.focus();
+                    return false;
+                }
+                
+                if (premiumAmount && (!premiumAmount.value || parseFloat(premiumAmount.value) <= 0)) {
+                    e.preventDefault();
+                    alert('Please enter a valid premium amount.');
+                    premiumAmount.focus();
+                    return false;
+                }
+                
+                if (premiumFrequency && !premiumFrequency.value) {
+                    e.preventDefault();
+                    alert('Please select a premium frequency.');
+                    premiumFrequency.focus();
+                    return false;
+                }
+                
+                if (policyStartDate && !policyStartDate.value) {
+                    e.preventDefault();
+                    alert('Please select a policy start date.');
+                    policyStartDate.focus();
+                    return false;
+                }
+                
+                if (policyStatus && !policyStatus.value) {
+                    e.preventDefault();
+                    alert('Please select a policy status.');
+                    policyStatus.focus();
+                    return false;
+                }
+            });
+        }
+        
+        // Auto-calculate commission amount
+        const coverageAmountField = document.getElementById('id_coverage_amount');
+        const commissionRateField = document.getElementById('id_commission_rate');
+        const commissionAmountField = document.getElementById('id_commission_amount');
+        
+        function calculateCommission() {
+            if (coverageAmountField && coverageAmountField.value && 
+                commissionRateField && commissionRateField.value && 
+                commissionAmountField) {
+                const coverage = parseFloat(coverageAmountField.value);
+                const rate = parseFloat(commissionRateField.value);
+                
+                if (coverage > 0 && rate > 0) {
+                    const commission = (coverage * rate) / 100;
+                    commissionAmountField.value = commission.toFixed(2);
+                }
+            }
+        }
+        
+        if (coverageAmountField && commissionRateField) {
+            coverageAmountField.addEventListener('change', calculateCommission);
+            commissionRateField.addEventListener('change', calculateCommission);
+            coverageAmountField.addEventListener('input', calculateCommission);
+            commissionRateField.addEventListener('input', calculateCommission);
+        }
+        
+        // Set default values for new policies
+        {% if not form.instance.pk %}
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default policy status to 'Quote' for new policies
+            const policyStatusField = document.getElementById('id_policy_status');
+            if (policyStatusField && !policyStatusField.value) {
+                policyStatusField.value = 'Quote';
+            }
+            
+            // Set default premium frequency to 'Monthly'
+            const premiumFrequencyField = document.getElementById('id_premium_frequency');
+            if (premiumFrequencyField && !premiumFrequencyField.value) {
+                premiumFrequencyField.value = 'Monthly';
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,580 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit Application{% else %}Add New Application{% endif %} - Advisor CRM{% endblock %}
+
+{% block page_title %}{% if form.instance.pk %}Edit Application{% else %}Add New Application{% endif %}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'application_list' %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> Back to Applications
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="applicationForm" action="{% url 'application_create' %}">
+                    {% csrf_token %}
+
+                    <!-- Display form errors -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <h5>Please correct the following errors:</h5>
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                            <li>{{ field }}: {{ error }}</li>
+                            {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Basic Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-info-circle me-2"></i>Basic Information
+                            </h5>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="id_customer" class="form-label">Customer <span
+                                    class="text-danger">*</span></label>
+                            {{ form.customer }}
+                            {% if form.customer.errors %}
+                            <div class="text-danger">{{ form.customer.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="id_application_type" class="form-label">Application Type <span
+                                    class="text-danger">*</span></label>
+                            {{ form.application_type }}
+                            {% if form.application_type.errors %}
+                            <div class="text-danger">{{ form.application_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Insurance Selection Section -->
+                    <div class="row mb-4" id="insurance-section" style="display: none;">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-shield me-2"></i>Insurance Selection
+                            </h5>
+
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Select Insurance Types <span
+                                            class="text-danger">*</span></label>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                {% for value, label in form.insurance_type.field.choices %}
+                                                {% if value %}
+                                                <div class="col-md-4 mb-2">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input insurance-checkbox"
+                                                            type="checkbox" name="insurance_types" value="{{ value }}"
+                                                            id="insurance_{{ value }}">
+                                                        <label class="form-check-label" for="insurance_{{ value }}">
+                                                            {{ label }}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mortgage Selection Section -->
+                    <div class="row mb-4" id="mortgage-section" style="display: none;">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-house me-2"></i>Mortgage Selection
+                            </h5>
+
+                            <div class="row">
+                                <div class="mb-3">
+                                    <label class="form-label">Search Mortgages</label>
+                                    <input type="text" class="form-control" id="mortgage-search"
+                                        placeholder="Search by address, postal code, city, or customer name...">
+                                    <div class="form-text">Start typing to search for existing mortgages</div>
+
+                                    <div id="mortgage-results" class="list-group mt-2"
+                                        style="max-height: 200px; overflow-y: auto;"></div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Selected Mortgages</label>
+                                    <div id="selected-mortgages-display"></div>
+                                    <div id="selected-mortgages"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Application Details Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-gear me-2"></i>Application Details
+                            </h5>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="id_application_status" class="form-label">Application Status</label>
+                            {{ form.application_status }}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="id_application_priority" class="form-label">Application Priority</label>
+                            {{ form.application_priority }}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="id_submitted_date" class="form-label">Submitted Date</label>
+                            {{ form.submitted_date }}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="id_expected_completion_date" class="form-label">Expected Completion Date</label>
+                            {{ form.expected_completion_date }}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="id_solicitor_name" class="form-label">Solicitor Name</label>
+                            {{ form.solicitor_name }}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="id_follow_up_date" class="form-label">Follow-up Date</label>
+                            {{ form.follow_up_date }}
+                        </div>
+                    </div>
+
+                    <!-- Notes Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-journal-text me-2"></i>Notes
+                            </h5>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="id_advisor_notes" class="form-label">Advisor Notes</label>
+                            {{ form.advisor_notes }}
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="id_internal_notes" class="form-label">Internal Notes</label>
+                            {{ form.internal_notes }}
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="id_decline_reason" class="form-label">Decline Reason</label>
+                            {{ form.decline_reason }}
+                        </div>
+                    </div>
+
+                    <!-- Hidden fields for selected values -->
+                    <input type="hidden" name="selected_insurance_types" id="selected_insurance_types">
+                    <input type="hidden" name="selected_mortgages" id="selected_mortgages">
+
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'application_list' %}" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if form.instance.pk %}Update Application{% else %}Create Application{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .insurance-checkbox {
+        transform: scale(1.2);
+        margin-right: 8px;
+    }
+
+    .form-check-label {
+        cursor: pointer;
+    }
+
+    #mortgage-results {
+        position: absolute;
+        z-index: 1000;
+        width: calc(100% - 30px);
+        max-height: 300px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .selected-item {
+        margin-bottom: 5px;
+        padding: 8px 12px;
+    }
+
+    .list-group-item-action {
+        cursor: pointer;
+    }
+
+    .list-group-item-action:hover {
+        background-color: #f8f9fa;
+    }
+
+    .select-mortgage-btn {
+        white-space: nowrap;
+    }
+</style>
+
+<script>
+    // Define these variables in the global scope to prevent them from being reset
+    let selectedMortgageIds = [];
+    let selectedInsuranceValues = [];
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const applicationType = document.getElementById('id_application_type');
+        const insuranceSection = document.getElementById('insurance-section');
+        const mortgageSection = document.getElementById('mortgage-section');
+        const mortgageSearch = document.getElementById('mortgage-search');
+        const mortgageResults = document.getElementById('mortgage-results');
+        const selectedMortgagesDisplay = document.getElementById('selected-mortgages-display');
+        const selectedMortgagesContainer = document.getElementById('selected-mortgages');
+        const selectedInsuranceTypes = document.getElementById('selected_insurance_types');
+        const selectedMortgagesField = document.getElementById('selected_mortgages');
+
+        // Initialize from hidden fields if they already have values (for edit mode)
+        if (selectedMortgagesField.value) {
+            selectedMortgageIds = selectedMortgagesField.value.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
+            console.log('Initialized mortgages from hidden field:', selectedMortgageIds);
+        }
+
+        if (selectedInsuranceTypes.value) {
+            selectedInsuranceValues = selectedInsuranceTypes.value.split(',').filter(val => val);
+            console.log('Initialized insurance from hidden field:', selectedInsuranceValues);
+        }
+
+        // Update the display with existing values
+        updateSelectedMortgagesDisplay();
+        updateSelectedInsuranceDisplay();
+
+        function toggleSections() {
+            const type = applicationType ? applicationType.value : '';
+
+            if (type === 'Mortgage') {
+                insuranceSection.style.display = 'none';
+                mortgageSection.style.display = 'block';
+            } else if (type === 'Insurance') {
+                insuranceSection.style.display = 'block';
+                mortgageSection.style.display = 'none';
+            } else if (type === 'Both') {
+                insuranceSection.style.display = 'block';
+                mortgageSection.style.display = 'block';
+            } else {
+                insuranceSection.style.display = 'none';
+                mortgageSection.style.display = 'none';
+            }
+        }
+
+        // Initial call
+        toggleSections();
+
+        // Add event listener
+        if (applicationType) {
+            applicationType.addEventListener('change', toggleSections);
+        }
+
+        // Mortgage search functionality
+        if (mortgageSearch) {
+            mortgageSearch.addEventListener('input', function () {
+                const searchTerm = this.value.trim();
+
+                if (searchTerm.length < 2) {
+                    mortgageResults.innerHTML = '';
+                    mortgageResults.style.display = 'none';
+                    return;
+                }
+
+                // Show loading
+                mortgageResults.innerHTML = '<div class="list-group-item">Searching...</div>';
+                mortgageResults.style.display = 'block';
+
+                // AJAX call to search mortgages
+                fetch(`/api/mortgages/search/?q=${encodeURIComponent(searchTerm)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        mortgageResults.innerHTML = '';
+
+                        if (data.length === 0) {
+                            mortgageResults.innerHTML = '<div class="list-group-item">No mortgages found</div>';
+                            return;
+                        }
+
+                        data.forEach(mortgage => {
+                            const item = document.createElement('div');
+                            item.className = 'list-group-item list-group-item-action';
+
+                            // Create a safe address string for the onclick attribute
+                            const safeAddress = mortgage.address.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+                            // Check if already selected
+                            const isSelected = selectedMortgageIds.includes(parseInt(mortgage.id));
+
+                            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${mortgage.address}</h6>
+                        <small class="text-muted">Customer: ${mortgage.customer} | Amount: ${mortgage.amount}</small>
+                        <br>
+                        <small class="text-muted">Postal Code: ${mortgage.postal_code || 'N/A'}</small>
+                    </div>
+                    <button type="button" class="btn btn-sm ${isSelected ? 'btn-success' : 'btn-primary'} select-mortgage-btn" 
+                            data-mortgage-id="${mortgage.id}" 
+                            data-mortgage-address="${safeAddress}"
+                            ${isSelected ? 'disabled' : ''}>
+                        ${isSelected ? 'Selected' : 'Select'}
+                    </button>
+                </div>
+            `;
+                            mortgageResults.appendChild(item);
+                        });
+
+                        // Add event listeners to the select buttons
+                        document.querySelectorAll('.select-mortgage-btn:not([disabled])').forEach(button => {
+                            button.addEventListener('click', function () {
+                                const mortgageId = this.getAttribute('data-mortgage-id');
+                                const mortgageAddress = this.getAttribute('data-mortgage-address');
+                                selectMortgage(mortgageId, mortgageAddress);
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        mortgageResults.innerHTML = '<div class="list-group-item text-danger">Error searching mortgages</div>';
+                    });
+            });
+
+            // Hide results when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!mortgageSearch.contains(e.target) && !mortgageResults.contains(e.target)) {
+                    mortgageResults.style.display = 'none';
+                }
+            });
+        }
+
+        // Function for selecting mortgages
+        // In the selectMortgage function, make sure we're using mortgage_id
+        function selectMortgage(mortgageId, address) {
+            // Keep as string since mortgage_id is CharField
+            // mortgageId is already a string, no need to parse
+
+            // Check if already selected
+            if (selectedMortgageIds.includes(mortgageId)) {
+                alert('This mortgage is already selected.');
+                return;
+            }
+
+            // Add to selected mortgages
+            selectedMortgageIds.push(mortgageId);
+
+            // Add hidden input
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selected_mortgages';
+            input.value = mortgageId;
+            selectedMortgagesContainer.appendChild(input);
+
+            // Update the display
+            updateSelectedMortgagesDisplay();
+
+            // Update hidden field
+            selectedMortgagesField.value = selectedMortgageIds.join(',');
+
+            // Clear search and hide results
+            mortgageSearch.value = '';
+            mortgageResults.innerHTML = '';
+            mortgageResults.style.display = 'none';
+
+            console.log('Mortgage selected:', mortgageId, 'Current mortgages:', selectedMortgageIds);
+        }
+
+        // In the removeMortgage function
+        function removeMortgage(mortgageId, button) {
+            // Keep as string since mortgage_id is CharField
+            // mortgageId is already a string, no need to parse
+
+            // Remove from selected array
+            selectedMortgageIds = selectedMortgageIds.filter(id => id !== mortgageId);
+
+            // Remove hidden input
+            const inputs = selectedMortgagesContainer.querySelectorAll(`input[value="${mortgageId}"]`);
+            inputs.forEach(input => input.remove());
+
+            // Update the display
+            updateSelectedMortgagesDisplay();
+
+            // Update hidden field
+            selectedMortgagesField.value = selectedMortgageIds.join(',');
+
+            console.log('Mortgage removed:', mortgageId, 'Current mortgages:', selectedMortgageIds);
+        }
+
+        // Update selected mortgages display
+        function updateSelectedMortgagesDisplay() {
+            selectedMortgagesDisplay.innerHTML = '';
+
+            if (selectedMortgageIds.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = 'text-muted';
+                emptyMsg.textContent = 'No mortgages selected';
+                selectedMortgagesDisplay.appendChild(emptyMsg);
+                return;
+            }
+
+            // For now, just show a count. You can enhance this to show actual details
+            const countDisplay = document.createElement('div');
+            countDisplay.className = 'alert alert-info';
+            countDisplay.innerHTML = `
+                <strong>${selectedMortgageIds.length} mortgage(s) selected</strong>
+                <button type="button" class="btn-close float-end" onclick="clearAllMortgages()"></button>
+            `;
+            selectedMortgagesDisplay.appendChild(countDisplay);
+        }
+
+        // Clear all mortgages
+        window.clearAllMortgages = function () {
+            selectedMortgageIds = [];
+            selectedMortgagesContainer.innerHTML = '';
+            updateSelectedMortgagesDisplay();
+            selectedMortgagesField.value = '';
+            console.log('All mortgages cleared');
+        };
+
+        // Insurance checkbox handling
+        document.querySelectorAll('input[name="insurance_types"]').forEach(checkbox => {
+            // Set initial checked state
+            if (selectedInsuranceValues.includes(checkbox.value)) {
+                checkbox.checked = true;
+            }
+
+            checkbox.addEventListener('change', function () {
+                updateSelectedInsuranceTypes();
+            });
+        });
+
+        // Update selected insurance types
+        function updateSelectedInsuranceTypes() {
+            selectedInsuranceValues = [];
+            document.querySelectorAll('input[name="insurance_types"]:checked').forEach(checkbox => {
+                selectedInsuranceValues.push(checkbox.value);
+            });
+
+            selectedInsuranceTypes.value = selectedInsuranceValues.join(',');
+            console.log('Insurance types updated:', selectedInsuranceValues);
+        }
+
+        // Update insurance display
+        function updateSelectedInsuranceDisplay() {
+            // You can add visual feedback for selected insurance types if needed
+        }
+
+        // Form validation
+        const applicationForm = document.getElementById('applicationForm');
+        if (applicationForm) {
+            applicationForm.addEventListener('submit', function (e) {
+                // Double-check the current state
+                console.log('SUBMIT - Final validation check:');
+                console.log('Type:', applicationType.value);
+                console.log('Mortgage IDs (array):', selectedMortgageIds);
+                console.log('Insurance values (array):', selectedInsuranceValues);
+                console.log('Mortgage field value:', selectedMortgagesField.value);
+                console.log('Insurance field value:', selectedInsuranceTypes.value);
+
+                const hasMortgages = selectedMortgageIds.length > 0;
+                const hasInsurance = selectedInsuranceValues.length > 0;
+
+                console.log('SUBMIT - Validation results:');
+                console.log('Has mortgages:', hasMortgages);
+                console.log('Has insurance:', hasInsurance);
+
+                // Ensure hidden fields are up to date
+                selectedMortgagesField.value = selectedMortgageIds.join(',');
+                selectedInsuranceTypes.value = selectedInsuranceValues.join(',');
+
+                const type = applicationType.value;
+
+                if (type === 'Both' && (!hasMortgages || !hasInsurance)) {
+                    e.preventDefault();
+                    alert('Please select at least one mortgage and one insurance type for "Both" applications.');
+                    console.log('Validation failed - missing mortgages or insurance');
+                    return false;
+                }
+
+                if (type === 'Mortgage' && !hasMortgages) {
+                    e.preventDefault();
+                    alert('Please select at least one mortgage for mortgage applications.');
+                    console.log('Validation failed - missing mortgages');
+                    return false;
+                }
+
+                if (type === 'Insurance' && !hasInsurance) {
+                    e.preventDefault();
+                    alert('Please select at least one insurance type for insurance applications.');
+                    console.log('Validation failed - missing insurance');
+                    return false;
+                }
+
+                // Debug: Log all form data being submitted
+                const formData = new FormData(this);
+                console.log('All form data being submitted:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(key, value);
+                }
+
+                console.log('Form validation passed - submitting form');
+            });
+        }
+
+        // Make functions available globally for debugging
+        window.selectedMortgageIds = selectedMortgageIds;
+        window.selectedInsuranceValues = selectedInsuranceValues;
+        window.debugFormState = function () {
+            console.log('Current state:');
+            console.log('Selected mortgage IDs:', selectedMortgageIds);
+            console.log('Selected insurance values:', selectedInsuranceValues);
+            console.log('Mortgage field value:', selectedMortgagesField.value);
+            console.log('Insurance field value:', selectedInsuranceTypes.value);
+        };
+    });
+</script>
+{% endblock %}

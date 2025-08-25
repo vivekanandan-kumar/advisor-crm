@@ -1,0 +1,136 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Applications - Advisor CRM{% endblock %}
+{% block page_title %}Applications{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'application_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle"></i> Add Application
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="mb-0">Application List</h5>
+                    </div>
+                    <div class="col-auto">
+                        <form method="get" class="d-flex">
+                            <input type="text" name="search" class="form-control me-2" placeholder="Search applications..." 
+                                   value="{{ request.GET.search }}">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if applications %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Application #</th>
+                                    <th>Customer</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Submitted</th>
+                                    <th>Advisor</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for application in applications %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ application.application_number }}</strong>
+                                        </td>
+                                        <td>
+                                            {{ application.customer.first_name }} {{ application.customer.last_name }}<br>
+                                            <small class="text-muted">{{ application.customer.email }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ application.application_type }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if application.application_status == 'Approved' %}success{% elif application.application_status == 'Declined' %}danger{% elif application.application_status == 'Completed' %}success{% else %}warning{% endif %}">
+                                                {{ application.application_status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if application.application_priority == 'High' %}danger{% elif application.application_priority == 'Medium' %}warning{% else %}info{% endif %}">
+                                                {{ application.application_priority }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if application.submitted_date %}
+                                                {{ application.submitted_date|date:"M d, Y" }}
+                                            {% else %}
+                                                <span class="text-muted">Not submitted</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if application.advisor %}
+                                                {{ application.advisor.get_full_name|default:application.advisor.username }}
+                                            {% else %}
+                                                <span class="text-muted">Unassigned</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'application_detail' application.pk %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="#" class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                        <div class="card-footer">
+                            <nav aria-label="Application pagination">
+                                <ul class="pagination justify-content-center mb-0">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                        </span>
+                                    </li>
+                                    
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="bi bi-file-text display-1 text-muted"></i>
+                        <p class="text-muted mt-3">No applications found.</p>
+                        <a href="{% url 'application_create' %}" class="btn btn-primary">Add Your First Application</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

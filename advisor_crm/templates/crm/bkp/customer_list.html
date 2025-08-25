@@ -1,0 +1,105 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Customers - Advisor CRM{% endblock %}
+{% block page_title %}Customers{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'customer_create' %}" class="btn btn-primary">
+    <i class="bi bi-person-plus"></i> Add Customer
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="mb-0">Customer List</h5>
+            </div>
+            <div class="col-auto">
+                <form method="get" class="d-flex">
+                    <input type="text" name="search" class="form-control me-2" placeholder="Search customers..." 
+                           value="{{ request.GET.search }}">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if customers %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Employment</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                            <tr>
+                                <td>
+                                    <strong>{{ customer.first_name }} {{ customer.last_name }}</strong>
+                                </td>
+                                <td>{{ customer.email }}</td>
+                                <td>{{ customer.phone|default:"-" }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ customer.employment_status }}</span>
+                                </td>
+                                <td>{{ customer.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'customer_detail' customer.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'customer_update' customer.pk %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="card-footer">
+                    <nav aria-label="Customer pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center p-5">
+                <i class="bi bi-people display-1 text-muted"></i>
+                <p class="text-muted mt-3">No customers found.</p>
+                <a href="{% url 'customer_create' %}" class="btn btn-primary">Add Your First Customer</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

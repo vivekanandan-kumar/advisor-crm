@@ -1,0 +1,172 @@
+<!-- advisor_form.html -->
+{% extends 'crm/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Advisor{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Advisor{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'advisor_list' %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> Back to Advisors
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Advisor Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name *</label>
+                                {% render_field form.first_name class="form-control" %}
+                                {% if form.first_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.first_name.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name *</label>
+                                {% render_field form.last_name class="form-control" %}
+                                {% if form.last_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.last_name.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email *</label>
+                                {% render_field form.email class="form-control" %}
+                                {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.email.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">Username *</label>
+                                {% render_field form.username class="form-control" %}
+                                {% if form.username.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.username.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.password.id_for_label }}" class="form-label">
+                                    {% if form.instance.pk %}New Password{% else %}Password *{% endif %}
+                                </label>
+                                {% render_field form.password class="form-control" %}
+                                {% if form.password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password.errors.0 }}
+                                </div>
+                                {% endif %}
+                                {% if form.instance.pk %}
+                                <small class="form-text text-muted">Leave blank to keep current password</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">Phone</label>
+                                {% render_field form.phone class="form-control" %}
+                                {% if form.phone.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.phone.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.license_number.id_for_label }}" class="form-label">License Number</label>
+                                {% render_field form.license_number class="form-control" %}
+                                {% if form.license_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.license_number.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.specialization.id_for_label }}" class="form-label">Specialization</label>
+                                {% render_field form.specialization class="form-control" %}
+                                {% if form.specialization.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.specialization.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.hire_date.id_for_label }}" class="form-label">Hire Date</label>
+                                {% render_field form.hire_date class="form-control" %}
+                                {% if form.hire_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.hire_date.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group form-check mt-4 pt-2">
+                                {% render_field form.active class="form-check-input" %}
+                                <label for="{{ form.active.id_for_label }}" class="form-check-label">Active Advisor</label>
+                                {% if form.active.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.active.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-primary">Save Advisor</button>
+                        <a href="{% url 'advisor_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
