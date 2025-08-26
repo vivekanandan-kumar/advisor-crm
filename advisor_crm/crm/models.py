@@ -42,7 +42,8 @@ class Advisor(AbstractUser):
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+    is_manager = models.BooleanField(default=False)
+    notes = models.TextField(blank=True, null=True)
     # Override email field to make it unique and required
     email = models.EmailField(unique=True, blank=False)
     

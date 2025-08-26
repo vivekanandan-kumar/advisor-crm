@@ -8221,3 +8221,752 @@ Traceback (most recent call last):
     ...<3 lines>...
     )
 django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 10: 'endblock'. Did you forget to register or load this tag?
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/urls.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/models.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/forms.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/models.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/templatetags/custom_filters.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 93, in dashboard
+    return render(request, 'crm/dashboard.html', context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 489, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'
+Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 93, in dashboard
+    return render(request, 'crm/dashboard.html', context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 489, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'
+Internal Server Error: /login/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/response.py", line 92, in rendered_content
+    return template.render(context, self._request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 489, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'
+Internal Server Error: /customers/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/response.py", line 92, in rendered_content
+    return template.render(context, self._request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 489, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'
+Internal Server Error: /customers/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/response.py", line 92, in rendered_content
+    return template.render(context, self._request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 489, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'
+Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 93, in dashboard
+    return render(request, 'crm/dashboard.html', context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 489, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'
+Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 93, in dashboard
+    return render(request, 'crm/dashboard.html', context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 489, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'
+Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 93, in dashboard
+    return render(request, 'crm/dashboard.html', context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 489, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'
+Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 93, in dashboard
+    return render(request, 'crm/dashboard.html', context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 518, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 489, in parse
+    raise self.error(token, e)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'

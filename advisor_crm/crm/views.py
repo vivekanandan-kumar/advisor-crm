@@ -406,6 +406,7 @@ class InsuranceDeleteView(LoginRequiredMixin, DeleteView):
         messages.success(request, 'Insurance policy deleted successfully!')
         return super().delete(request, *args, **kwargs)
 
+# views.py - ApplicationListView
 class ApplicationListView(LoginRequiredMixin, ListView):
     model = Application
     template_name = 'crm/application_list.html'
@@ -413,8 +414,55 @@ class ApplicationListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-       #return Application.objects.filter(advisor=self.request.user).order_by('-created_at')
-       return Application.objects.all().order_by('-created_at')
+        queryset = Application.objects.all().order_by('-created_at')
+        
+        search_query = self.request.GET.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                Q(application_number__icontains=search_query) |
+                Q(customer__first_name__icontains=search_query) |
+                Q(customer__last_name__icontains=search_query) |
+                Q(customer__email__icontains=search_query) |
+                Q(mortgage__property_postal_code__icontains=search_query) |
+                Q(insurance__policy_number__icontains=search_query)
+            ).distinct()
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        search_query = self.request.GET.get('search')
+        if search_query:
+            context['search'] = search_query
+        return context
+
+# views.py - Add advanced search function
+@login_required
+def application_search(request):
+    """Advanced application search"""
+    query = request.GET.get('q', '')
+    
+    if query:
+        applications = Application.objects.filter(
+            Q(application_number__icontains=query) |
+            Q(customer__first_name__icontains=query) |
+            Q(customer__last_name__icontains=query) |
+            Q(customer__email__icontains=query) |
+            Q(mortgage__property_postal_code__icontains=query) |
+            Q(mortgage__property_address__icontains=query) |
+            Q(mortgage__property_city__icontains=query) |
+            Q(insurance__policy_number__icontains=query) |
+            Q(insurance__insurance_company__icontains=query)
+        ).distinct().order_by('-created_at')
+    else:
+        applications = Application.objects.all().order_by('-created_at')
+    
+    context = {
+        'applications': applications,
+        'search_query': query,
+    }
+    
+    return render(request, 'crm/application_list.html', context)
 
 class ApplicationDetailView(LoginRequiredMixin, DetailView):
     model = Application

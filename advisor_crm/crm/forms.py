@@ -16,7 +16,8 @@ class AdvisorCreationForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'date_of_birth', 
-                 'phone', 'license_number', 'specialization', 'hire_date', 'active')
+                 'phone', 'license_number', 'specialization', 'hire_date', 'active',
+                 'is_manager', 'notes')
         
 class AdvisorForm(forms.ModelForm):
     # User model fields
@@ -47,7 +48,8 @@ class AdvisorForm(forms.ModelForm):
     class Meta:
         model = User  # This should be your Advisor model (which is the User)
         fields = ['username', 'email', 'first_name', 'last_name', 'license_number', 
-                 'specialization', 'phone', 'hire_date', 'active', 'date_of_birth']
+                 'specialization', 'phone', 'hire_date', 'active', 'date_of_birth',
+                 'is_manager', 'notes']
         widgets = {
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'license_number': forms.TextInput(attrs={'class': 'form-control'}),
@@ -55,6 +57,8 @@ class AdvisorForm(forms.ModelForm):
             'hire_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'date_of_birth': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_manager': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
         }
     
     def __init__(self, *args, **kwargs):

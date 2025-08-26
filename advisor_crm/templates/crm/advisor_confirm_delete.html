@@ -23,6 +23,10 @@
                 <div class="mb-3 p-3 border rounded">
                     <strong>Advisor:</strong> {{ object.first_name }} {{ object.last_name }}<br>
                     <strong>Email:</strong> {{ object.email }}<br>
+                    <strong>Role:</strong> 
+                    <span class="badge {% if object.is_manager %}bg-warning{% else %}bg-info{% endif %}">
+                        {% if object.is_manager %}Manager{% else %}Advisor{% endif %}
+                    </span><br>
                     <strong>Status:</strong> 
                     <span class="badge {% if object.active %}bg-success{% else %}bg-danger{% endif %}">
                         {% if object.active %}Active{% else %}Inactive{% endif %}

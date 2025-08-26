@@ -45,6 +45,7 @@ urlpatterns = [
     # Applications
     path('applications/', views.ApplicationListView.as_view(), name='application_list'),
     path('applications/add/', views.application_create_view, name='application_create'),  # Use function-based view
+    path('applications/search/', views.application_search, name='application_search'),
     path('applications/<int:pk>/', views.ApplicationDetailView.as_view(), name='application_detail'),
     path('applications/<int:application_id>/status/', views.update_application_status, name='update_application_status'),
     path('applications/<int:pk>/edit/', ApplicationUpdateView.as_view(), name='application_update'),

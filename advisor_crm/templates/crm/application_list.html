@@ -20,117 +20,168 @@
                     </div>
                     <div class="col-auto">
                         <form method="get" class="d-flex">
-                            <input type="text" name="search" class="form-control me-2" placeholder="Search applications..." 
-                                   value="{{ request.GET.search }}">
-                            <button type="submit" class="btn btn-outline-primary">
-                                <i class="bi bi-search"></i>
-                            </button>
+                            <div class="input-group" style="min-width: 300px;">
+                                <input type="text" name="search" class="form-control form-control-sm"
+                                    placeholder="Search by app #, customer, email, or postal code..."
+                                    value="{{ request.GET.search }}" aria-label="Search applications"
+                                    style="font-size: 0.875rem; min-width: 400px;">
+                                <button type="submit" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                                {% if request.GET.search %}
+                                <a href="{% url 'application_list' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-x"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </form>
                     </div>
                 </div>
             </div>
+            <!-- Add this below the card-header or in the card-body -->
+            {% if request.GET.search %}
+            <div class="alert alert-info mb-0">
+                <small>
+                    <i class="bi bi-info-circle"></i>
+                    Showing results for: <strong>"{{ request.GET.search }}"</strong>
+                    {% with applications.count as result_count %}
+                    - Found {{ result_count }} application{{ result_count|pluralize }}
+                    {% endwith %}
+                </small>
+            </div>
+            {% endif %}
             <div class="card-body p-0">
                 {% if applications %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Application #</th>
-                                    <th>Customer</th>
-                                    <th>Type</th>
-                                    <th>Status</th>
-                                    <th>Priority</th>
-                                    <th>Submitted</th>
-                                    <th>Advisor</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for application in applications %}
-                                    <tr>
-                                        <td>
-                                            <strong>{{ application.application_number }}</strong>
-                                        </td>
-                                        <td>
-                                            {{ application.customer.first_name }} {{ application.customer.last_name }}<br>
-                                            <small class="text-muted">{{ application.customer.email }}</small>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-info">{{ application.application_type }}</span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-{% if application.application_status == 'Approved' %}success{% elif application.application_status == 'Declined' %}danger{% elif application.application_status == 'Completed' %}success{% else %}warning{% endif %}">
-                                                {{ application.application_status }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-{% if application.application_priority == 'High' %}danger{% elif application.application_priority == 'Medium' %}warning{% else %}info{% endif %}">
-                                                {{ application.application_priority }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {% if application.submitted_date %}
-                                                {{ application.submitted_date|date:"M d, Y" }}
-                                            {% else %}
-                                                <span class="text-muted">Not submitted</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if application.advisor %}
-                                                {{ application.advisor.get_full_name|default:application.advisor.username }}
-                                            {% else %}
-                                                <span class="text-muted">Unassigned</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <a href="{% url 'application_detail' application.pk %}" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <a href="#" class="btn btn-sm btn-outline-secondary">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- Pagination -->
-                    {% if is_paginated %}
-                        <div class="card-footer">
-                            <nav aria-label="Application pagination">
-                                <ul class="pagination justify-content-center mb-0">
-                                    {% if page_obj.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
-                                        </li>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Application #</th>
+                                <th>Customer</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Submitted</th>
+                                <th>Postal Code</th>
+                                <th>Advisor</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for application in applications %}
+                            <tr>
+                                <td>
+                                    <strong>{{ application.application_number }}</strong>
+                                </td>
+                                <td>
+                                    {{ application.customer.first_name }} {{ application.customer.last_name }}<br>
+                                    <small class="text-muted">{{ application.customer.email }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ application.application_type }}</span>
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge bg-{% if application.application_status == 'Approved' %}success{% elif application.application_status == 'Declined' %}danger{% elif application.application_status == 'Completed' %}success{% else %}warning{% endif %}">
+                                        {{ application.application_status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge bg-{% if application.application_priority == 'High' %}danger{% elif application.application_priority == 'Medium' %}warning{% else %}info{% endif %}">
+                                        {{ application.application_priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if application.submitted_date %}
+                                    {{ application.submitted_date|date:"M d, Y" }}
+                                    {% else %}
+                                    <span class="text-muted">Not submitted</span>
                                     {% endif %}
-                                    
-                                    <li class="page-item active">
-                                        <span class="page-link">
-                                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                                        </span>
-                                    </li>
-                                    
-                                    {% if page_obj.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
-                                        </li>
+                                </td>
+                                <td>
+                                    {% if application.mortgage and application.mortgage.property_postal_code %}
+                                    {{ application.mortgage.property_postal_code }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
                                     {% endif %}
-                                </ul>
-                            </nav>
-                        </div>
-                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if application.advisor %}
+                                    {{ application.advisor.get_full_name|default:application.advisor.username }}
+                                    {% else %}
+                                    <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'application_detail' application.pk %}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'application_update' application.pk %}"
+                                        class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <div class="card-footer">
+                    <nav aria-label="Application pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+                            </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
                 {% else %}
-                    <div class="text-center p-5">
-                        <i class="bi bi-file-text display-1 text-muted"></i>
-                        <p class="text-muted mt-3">No applications found.</p>
-                        <a href="{% url 'application_create' %}" class="btn btn-primary">Add Your First Application</a>
-                    </div>
+                <div class="text-center p-5">
+                    <i class="bi bi-file-text display-1 text-muted"></i>
+                    <p class="text-muted mt-3">No applications found.</p>
+                    <a href="{% url 'application_create' %}" class="btn btn-primary">Add Your First Application</a>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
+document.addEventListener('DOMContentLoaded', function() {
+const searchInput = document.querySelector('input[name="search"]');
+const searchForm = document.querySelector('form[method="get"]');
+
+if (searchInput && searchForm) {
+let searchTimeout;
+
+searchInput.addEventListener('input', function() {
+clearTimeout(searchTimeout);
+searchTimeout = setTimeout(() => {
+searchForm.submit();
+}, 500); // Submit after 500ms of inactivity
+});
+}
+});
