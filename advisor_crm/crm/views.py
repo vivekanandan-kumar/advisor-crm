@@ -18,7 +18,13 @@ from django.db import transaction
 from decimal import Decimal
 from django.views.decorators.csrf import csrf_protect
 from .forms import DocumentForm, CommunicationForm
+from django.db import models
 from django.db.models import Q, Count, Sum, Avg 
+from django.db.models.functions import TruncMonth, TruncYear
+from collections import defaultdict
+import calendar
+from collections import defaultdict
+
 
 from .models import (
     Customer, Mortgage, InsurancePolicy, Application,
@@ -31,6 +37,15 @@ from .forms import (
 
 # Get the custom user model
 User = get_user_model()
+
+def calculate_growth(previous_value, current_value):
+    """
+    Calculate percentage growth between two values
+    Returns 0 if previous value is 0 to avoid division by zero
+    """
+    if previous_value == 0:
+        return 0
+    return ((current_value - previous_value) / previous_value) * 100
 
 @login_required
 def dashboard(request):
@@ -411,7 +426,7 @@ class ApplicationListView(LoginRequiredMixin, ListView):
     model = Application
     template_name = 'crm/application_list.html'
     context_object_name = 'applications'
-    paginate_by = 20
+    paginate_by = 15
 
     def get_queryset(self):
         queryset = Application.objects.all().order_by('-created_at')
@@ -720,50 +735,122 @@ def application_create_view(request):
 
 @login_required
 def renewal_alerts(request):
-    """View for insurance policy renewal alerts"""
+    """View for insurance policy renewal alerts with filtering"""
     advisor = request.user
-
-    # Get renewals due in different time periods
     today = timezone.now().date()
+    
+    # Get filter parameters from request
+    policy_type_filter = request.GET.get('policy_type', '')
+    time_range_filter = request.GET.get('time_range', '30')
+    priority_filter = request.GET.get('priority', '')
+    
+    # Convert time range to integer
+    try:
+        days_range = int(time_range_filter)
+    except (ValueError, TypeError):
+        days_range = 30
+    
+    # Calculate date ranges
+    end_date = today + timedelta(days=days_range)
+    
+    # Base query - filter by advisor and active policies
+    policies = InsurancePolicy.objects.filter(
+        advisor=advisor,
+        policy_status='Active'
+    )
+    
+    # Apply policy type filter if provided
+    if policy_type_filter:
+        policies = policies.filter(policy_type=policy_type_filter)
+    
+    # Apply date range filter
+    policies = policies.filter(
+        renewal_date__gte=today,
+        renewal_date__lte=end_date
+    ).order_by('renewal_date')
+    
+    # Categorize policies by urgency
     next_7_days = today + timedelta(days=7)
     next_30_days = today + timedelta(days=30)
     next_90_days = today + timedelta(days=90)
-
-    overdue = InsurancePolicy.objects.filter(
-        advisor=advisor,
-        renewal_date__lt=today,
-        policy_status='Active'
-    ).order_by('renewal_date')
-
-    due_7_days = InsurancePolicy.objects.filter(
-        advisor=advisor,
+    
+    overdue = policies.filter(renewal_date__lt=today)
+    due_7_days = policies.filter(
         renewal_date__gte=today,
-        renewal_date__lte=next_7_days,
-        policy_status='Active'
-    ).order_by('renewal_date')
-
-    due_30_days = InsurancePolicy.objects.filter(
-        advisor=advisor,
+        renewal_date__lte=next_7_days
+    )
+    due_30_days = policies.filter(
         renewal_date__gt=next_7_days,
-        renewal_date__lte=next_30_days,
-        policy_status='Active'
-    ).order_by('renewal_date')
-
-    due_90_days = InsurancePolicy.objects.filter(
-        advisor=advisor,
+        renewal_date__lte=next_30_days
+    )
+    due_90_days = policies.filter(
         renewal_date__gt=next_30_days,
-        renewal_date__lte=next_90_days,
-        policy_status='Active'
-    ).order_by('renewal_date')
-
+        renewal_date__lte=next_90_days
+    )
+    
+    # Calculate counts
+    overdue_count = overdue.count()
+    urgent_count = due_7_days.count()
+    warning_count = due_30_days.count()
+    upcoming_count = due_90_days.count()
+    total_count = policies.count()
+    
+    # For export functionality
+    if request.GET.get('export') == 'csv':
+        return export_renewals_to_csv(policies)
+    
     context = {
-        'overdue': overdue,
-        'due_7_days': due_7_days,
-        'due_30_days': due_30_days,
-        'due_90_days': due_90_days,
+        'overdue_renewals': overdue,
+        'urgent_renewals': due_7_days,
+        'warning_renewals': due_30_days,
+        'upcoming_renewals': due_90_days,
+        'all_renewals': policies,
+        'overdue_count': overdue_count,
+        'urgent_count': urgent_count,
+        'warning_count': warning_count,
+        'upcoming_count': upcoming_count,
+        'total_count': total_count,
+        'policy_types': InsurancePolicy.POLICY_TYPES,
+        'applied_filters': {
+            'policy_type': policy_type_filter,
+            'time_range': time_range_filter,
+            'priority': priority_filter,
+        }
     }
-
+    
     return render(request, 'crm/renewal_alerts.html', context)
+
+
+def export_renewals_to_csv(queryset):
+    """Export renewal data to CSV"""
+    import csv
+    from django.http import HttpResponse
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="renewal_alerts.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        'Policy Number', 'Policy Type', 'Customer', 'Coverage Amount', 
+        'Premium Amount', 'Renewal Date', 'Days Until Renewal', 'Insurance Company'
+    ])
+    
+    today = timezone.now().date()
+    for policy in queryset:
+        days_until_renewal = (policy.renewal_date - today).days if policy.renewal_date else 'N/A'
+        
+        writer.writerow([
+            policy.policy_number or 'N/A',
+            policy.policy_type,
+            f"{policy.customer.first_name} {policy.customer.last_name}",
+            f"£{policy.coverage_amount:,.2f}" if policy.coverage_amount else 'N/A',
+            f"£{policy.premium_amount:,.2f}" if policy.premium_amount else 'N/A',
+            policy.renewal_date.strftime('%Y-%m-%d') if policy.renewal_date else 'N/A',
+            days_until_renewal,
+            policy.insurance_company
+        ])
+    
+    return response
 
 @login_required
 def communication_create(request, customer_id):
@@ -923,16 +1010,19 @@ def edit_document(request, pk):
     # For GET requests, redirect to application detail with modal trigger
     return redirect('application_detail', pk=document.application.pk)
 
+
+
+# the reports_view function with real data calculations
 @login_required
 def reports_view(request):
     """Reports and analytics view with role-based access"""
     # Determine date range (default to last 30 days)
-    end_date = timezone.now().date()
-    start_date = end_date - timedelta(days=30)
+    days_range = int(request.GET.get('days', 30))
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=days_range)
     
-    # Check if user is a manager (you'll need to implement this logic)
-    # For now, let's assume all users can see their own data
-    is_manager = False  # You'll need to implement proper manager detection
+    # Check if user is a manager
+    is_manager = request.user.is_manager if hasattr(request.user, 'is_manager') else False
     
     # Base queryset - filter by advisor if not manager
     if is_manager:
@@ -941,40 +1031,47 @@ def reports_view(request):
         policies = InsurancePolicy.objects.all()
         mortgages = Mortgage.objects.all()
         commissions = Commission.objects.all()
+        customers = Customer.objects.all()
     else:
         # Regular advisors see only their data
         applications = Application.objects.filter(advisor=request.user)
         policies = InsurancePolicy.objects.filter(advisor=request.user)
         mortgages = Mortgage.objects.filter(advisor=request.user)
         commissions = Commission.objects.filter(advisor=request.user)
+        customers = Customer.objects.filter(advisor=request.user)
+    
+    # Filter by date range
+    applications = applications.filter(created_at__range=[start_date, end_date])
+    policies = policies.filter(created_at__range=[start_date, end_date])
+    mortgages = mortgages.filter(created_at__range=[start_date, end_date])
+    commissions = commissions.filter(created_at__range=[start_date, end_date])
     
     # Calculate metrics
     total_revenue = commissions.aggregate(Sum('commission_amount'))['commission_amount__sum'] or 0
     new_policies = policies.filter(
         policy_status='Active',
-        policy_start_date__gte=start_date
+        policy_start_date__gte=start_date.date()
     ).count()
     
     # Calculate renewal rate
     active_policies = policies.filter(policy_status='Active')
     renewed_policies = policies.filter(
         policy_status='Renewed',
-        renewal_date__gte=start_date,
-        renewal_date__lte=end_date
+        renewal_date__gte=start_date.date(),
+        renewal_date__lte=end_date.date()
     ).count()
     
     renewal_rate = (renewed_policies / active_policies.count() * 100) if active_policies.count() > 0 else 0
     
-    # Calculate average commission - FIXED: Use Avg instead of Avg
+    # Calculate average commission
     avg_commission = commissions.aggregate(Avg('commission_amount'))['commission_amount__avg'] or 0
     
     # Mortgage-specific metrics
     mortgage_applications = mortgages.filter(
-        application_date__gte=start_date,
-        application_date__lte=end_date
+        application_date__gte=start_date.date(),
+        application_date__lte=end_date.date()
     ).count()
     
-    # Additional metrics for the report
     # Calculate average loan amount
     avg_loan_amount = mortgages.aggregate(Avg('loan_amount'))['loan_amount__avg'] or 0
     
@@ -1022,21 +1119,305 @@ def reports_view(request):
     for renewal in upcoming_renewals:
         renewal.days_until_renewal = (renewal.renewal_date - timezone.now().date()).days
     
+    # Advisor Performance Comparison Data
+    Advisor = get_user_model()
+    
+    # Calculate previous period for growth comparisons
+    prev_start_date = start_date - (end_date - start_date)
+    prev_end_date = start_date
+    
+    # Revenue growth calculation
+    prev_revenue = Commission.objects.filter(
+        created_at__range=[prev_start_date, prev_end_date],
+        advisor=request.user
+    ).aggregate(Sum('commission_amount'))['commission_amount__sum'] or 0
+    revenue_growth = calculate_growth(prev_revenue, total_revenue)
+    
+    # Policy growth calculation
+    prev_policies = InsurancePolicy.objects.filter(
+        created_at__range=[prev_start_date, prev_end_date],
+        advisor=request.user
+    ).count()
+    policy_growth = calculate_growth(prev_policies, new_policies)
+    
+    # Renewal change calculation (placeholder)
+    renewal_change = 5  # Placeholder value
+    
+    # Commission growth calculation
+    prev_commission = Commission.objects.filter(
+        created_at__range=[prev_start_date, prev_end_date],
+        advisor=request.user
+    ).aggregate(Avg('commission_amount'))['commission_amount__avg'] or 0
+    commission_growth = calculate_growth(prev_commission, avg_commission)
+    
+    # Mortgage growth calculation
+    prev_mortgage_apps = Mortgage.objects.filter(
+        created_at__range=[prev_start_date, prev_end_date],
+        advisor=request.user
+    ).count()
+    mortgage_growth = calculate_growth(prev_mortgage_apps, mortgage_applications)
+    
+    # Loan amount change calculation
+    prev_avg_loan = Mortgage.objects.filter(
+        created_at__range=[prev_start_date, prev_end_date],
+        advisor=request.user
+    ).aggregate(Avg('loan_amount'))['loan_amount__avg'] or 0
+    loan_amount_change = calculate_growth(prev_avg_loan, avg_loan_amount)
+    
+    # Success rate change calculation
+    prev_total_apps = Application.objects.filter(
+        created_at__range=[prev_start_date, prev_end_date],
+        advisor=request.user
+    ).count()
+    prev_completed_apps = Application.objects.filter(
+        application_status='Completed',
+        created_at__range=[prev_start_date, prev_end_date],
+        advisor=request.user
+    ).count()
+    prev_success_rate = (prev_completed_apps / prev_total_apps * 100) if prev_total_apps > 0 else 0
+    success_rate_change = calculate_growth(prev_success_rate, success_rate)
+    
+    # Pending documents change calculation
+    prev_pending_docs = Document.objects.filter(
+        application__in=Application.objects.filter(
+            created_at__range=[prev_start_date, prev_end_date],
+            advisor=request.user
+        ),
+        document_status='Required'
+    ).count()
+    pending_docs_change = calculate_growth(prev_pending_docs, document_status['Required'])
+    
+    # Charts data
+    revenue_data = get_revenue_trend_data(commissions, 6)
+    product_data = get_product_distribution_data(policies)
+    application_status_data = get_application_status_data(applications)
+    commission_type_data = get_commission_type_data(commissions)
+    renewal_chart_data = get_renewal_chart_data(policies)
+    
+    # Advisor Performance (for managers)
+    advisor_performance = []
+    if is_manager:
+        advisor_performance = get_advisor_performance_data(Advisor.objects.filter(is_active=True), start_date, end_date)
+    
+    # Top Advisors
+    top_advisors = get_top_advisors(Advisor.objects.filter(is_active=True), start_date, end_date)
+    
+    # Mortgage Performance
+    mortgage_performance = get_mortgage_performance_data(mortgages)
+    
     context = {
-        'start_date': start_date,
-        'end_date': end_date,
+        'start_date': start_date.date(),
+        'end_date': end_date.date(),
+        'days_range': days_range,
         'total_revenue': total_revenue,
+        'revenue_growth': revenue_growth,
         'new_policies': new_policies,
+        'policy_growth': policy_growth,
         'renewal_rate': renewal_rate,
+        'renewal_change': renewal_change,
         'avg_commission': avg_commission,
+        'commission_growth': commission_growth,
         'mortgage_applications': mortgage_applications,
+        'mortgage_growth': mortgage_growth,
         'avg_loan_amount': avg_loan_amount,
+        'loan_amount_change': loan_amount_change,
         'success_rate': success_rate,
+        'success_rate_change': success_rate_change,
         'document_status': document_status,
         'document_status_total': document_status_total,
+        'pending_docs_change': pending_docs_change,
         'policy_performance': policy_performance,
         'upcoming_renewals': upcoming_renewals,
         'user': request.user,
+        'advisor_performance': advisor_performance,
+        'top_advisors': top_advisors,
+        'mortgage_completion_rate': mortgage_performance['completion_rate'],
+        'avg_mortgage_commission': mortgage_performance['avg_commission'],
+        'top_mortgage_lender': mortgage_performance['top_lender'],
+        'mortgage_types_popular': mortgage_performance['popular_type'],
+        
+        # Charts data
+        'revenue_labels': revenue_data['labels'],
+        'revenue_data': revenue_data['values'],
+        'product_labels': product_data['labels'],
+        'product_data': product_data['values'],
+        'application_status_labels': application_status_data['labels'],
+        'application_status_data': application_status_data['values'],
+        'commission_type_labels': commission_type_data['labels'],
+        'commission_type_data': commission_type_data['values'],
+        'renewal_labels': renewal_chart_data['labels'],
+        'renewal_data': renewal_chart_data['values'],
+        
+        # Form options
+        'policy_types': InsurancePolicy.POLICY_TYPES,
+        'all_advisors': Advisor.objects.filter(is_active=True) if is_manager else [],
     }
-    
+
     return render(request, 'crm/reports.html', context)
+
+def get_revenue_trend_data(commissions, months=6):
+    """Get revenue trend data for chart"""
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=30*months)
+    
+    monthly_data = commissions.filter(
+        created_at__range=[start_date, end_date]
+    ).annotate(
+        month=TruncMonth('created_at')
+    ).values('month').annotate(
+        total=Sum('commission_amount')
+    ).order_by('month')
+    
+    labels = []
+    values = []
+    
+    for data in monthly_data:
+        labels.append(data['month'].strftime('%b %Y'))
+        values.append(float(data['total'] or 0))
+    
+    return {'labels': labels, 'values': values}
+
+def get_product_distribution_data(policies):
+    """Get product distribution data for chart"""
+    # Use 'insurance_id' instead of 'id' for counting
+    product_data = policies.values('policy_type').annotate(
+        count=Count('insurance_id')
+    ).order_by('-count')
+    
+    labels = []
+    values = []
+    
+    for data in product_data:
+        labels.append(data['policy_type'])
+        values.append(data['count'])
+    
+    return {'labels': labels, 'values': values}
+
+def get_renewal_chart_data(policies):
+    """Get renewal status data for chart"""
+    # Use 'insurance_id' instead of 'id' for counting
+    renewal_data = policies.values('policy_status').annotate(
+        count=Count('insurance_id')
+    ).order_by('-count')
+    
+    labels = []
+    values = []
+    
+    for data in renewal_data:
+        labels.append(data['policy_status'])
+        values.append(data['count'])
+    
+    return {'labels': labels, 'values': values}
+
+def get_application_status_data(applications):
+    """Get application status distribution data for chart"""
+    status_data = applications.values('application_status').annotate(
+        count=Count('application_id')
+    ).order_by('-count')
+    
+    labels = []
+    values = []
+    
+    for data in status_data:
+        labels.append(data['application_status'])
+        values.append(data['count'])
+    
+    return {'labels': labels, 'values': values}
+
+def get_commission_type_data(commissions):
+    """Get commission type distribution data for chart"""
+    type_data = commissions.values('commission_type').annotate(
+        total=Sum('commission_amount')
+    ).order_by('-total')
+    
+    labels = []
+    values = []
+    
+    for data in type_data:
+        labels.append(data['commission_type'])
+        values.append(float(data['total'] or 0))
+    
+    return {'labels': labels, 'values': values}
+
+
+def get_advisor_performance_data(advisors, start_date, end_date):
+    """Get advisor performance data for managers"""
+    advisor_performance = []
+    
+    for advisor in advisors:
+        advisor_apps = Application.objects.filter(
+            advisor=advisor,
+            created_at__range=[start_date, end_date]
+        )
+        advisor_commissions = Commission.objects.filter(
+            advisor=advisor,
+            created_at__range=[start_date, end_date]
+        )
+        
+        completed_apps = advisor_apps.filter(application_status='Completed').count()
+        total_apps = advisor_apps.count()
+        success_rate = (completed_apps / total_apps * 100) if total_apps > 0 else 0
+        total_revenue = advisor_commissions.aggregate(
+            Sum('commission_amount')
+        )['commission_amount__sum'] or 0
+        
+        advisor_performance.append({
+            'advisor': advisor,
+            'total_applications': total_apps,
+            'completed_applications': completed_apps,
+            'success_rate': success_rate,
+            'total_revenue': total_revenue,
+        })
+    
+    return sorted(advisor_performance, key=lambda x: x['total_revenue'], reverse=True)
+
+def get_top_advisors(advisors, start_date, end_date, limit=5):
+    """Get top performing advisors by revenue"""
+    advisor_performance = []
+    
+    for advisor in advisors:
+        advisor_commissions = Commission.objects.filter(
+            advisor=advisor,
+            created_at__range=[start_date, end_date]
+        )
+        total_revenue = advisor_commissions.aggregate(
+            Sum('commission_amount')
+        )['commission_amount__sum'] or 0
+        
+        if total_revenue > 0:
+            advisor_performance.append({
+                'advisor': advisor,
+                'total_revenue': total_revenue,
+            })
+    
+    return sorted(advisor_performance, key=lambda x: x['total_revenue'], reverse=True)[:limit]
+
+def get_mortgage_performance_data(mortgages):
+    """Get mortgage performance metrics"""
+    completed_mortgages = mortgages.filter(mortgage_status='Approved').count()
+    total_mortgages = mortgages.count()
+    completion_rate = (completed_mortgages / total_mortgages * 100) if total_mortgages > 0 else 0
+    
+    # Calculate average commission from related applications
+    mortgage_commissions = Commission.objects.filter(
+        mortgage__in=mortgages
+    ).aggregate(Avg('commission_amount'))['commission_amount__avg'] or 0
+    
+    # Find top lender - use 'lender' field instead of 'lender_name'
+    lender_data = mortgages.values('lender').annotate(
+        count=Count('mortgage_id')  # Use 'mortgage_id' instead of 'id'
+    ).order_by('-count').first()
+    top_lender = lender_data['lender'] if lender_data else 'N/A'
+    
+    # Find most popular mortgage type - use 'mortgage_id' instead of 'id'
+    type_data = mortgages.values('mortgage_type').annotate(
+        count=Count('mortgage_id')  # Use 'mortgage_id' instead of 'id'
+    ).order_by('-count').first()
+    popular_type = type_data['mortgage_type'] if type_data else 'N/A'
+    
+    return {
+        'completion_rate': completion_rate,
+        'avg_commission': mortgage_commissions,
+        'top_lender': top_lender,
+        'popular_type': popular_type,
+    }

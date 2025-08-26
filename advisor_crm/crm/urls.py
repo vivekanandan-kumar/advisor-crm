@@ -55,6 +55,7 @@ urlpatterns = [
     
     # Renewals and Alerts
     path('renewals/', views.renewal_alerts, name='renewal_alerts'),
+    path('renewal-alerts/', views.renewal_alerts, name='renewal_alerts'),
     
     # Reports
     path('reports/', views.reports_view, name='reports'),

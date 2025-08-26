@@ -8970,3 +8970,265 @@ Traceback (most recent call last):
   File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/template/base.py", line 615, in find_filter
     raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
 django.template.exceptions.TemplateSyntaxError: Invalid filter: 'format_name'
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+Internal Server Error: /reports/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1052, in reports_view
+    filter=models.Q(commission__created_at__gte=start_date)
+           ^^^^^^
+NameError: name 'models' is not defined
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/urls.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+Internal Server Error: /reports/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1028, in reports_view
+    policies = Policy.objects.filter(advisor=request.user)
+               ^^^^^^
+NameError: name 'Policy' is not defined
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+Internal Server Error: /reports/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1183, in reports_view
+    product_data = get_product_distribution_data(policies)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1292, in get_product_distribution_data
+    distribution = policies.values('policy_type').annotate(
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        count=Count('id')
+        ^^^^^^^^^^^^^^^^^
+    ).order_by('-count')
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1649, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1701, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/aggregates.py", line 176, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize, for_save)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2049, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1900, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1805, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'id' into field. Choices are: advisor, advisor_id, application, automatic_renewal, beneficiary, commission, commission_amount, commission_rate, coverage_amount, created_at, customer, customer_id, insurance_company, insurance_id, next_review_date, notes, policy_end_date, policy_number, policy_start_date, policy_status, policy_type, premium_amount, premium_frequency, renewal_date, underwriting_class, updated_at
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+Internal Server Error: /reports/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1125, in reports_view
+    revenue_growth = calculate_growth(prev_revenue, total_revenue)
+                     ^^^^^^^^^^^^^^^^
+NameError: name 'calculate_growth' is not defined
+Internal Server Error: /reports/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1125, in reports_view
+    revenue_growth = calculate_growth(prev_revenue, total_revenue)
+                     ^^^^^^^^^^^^^^^^
+NameError: name 'calculate_growth' is not defined
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+Internal Server Error: /reports/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1192, in reports_view
+    product_data = get_product_distribution_data(policies)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1282, in get_product_distribution_data
+    product_data = policies.values('policy_type').annotate(
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        count=Count('id')
+        ^^^^^^^^^^^^^^^^^
+    ).order_by('-count')
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1649, in annotate
+    return self._annotate(args, kwargs, select=True)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1701, in _annotate
+    clone.query.add_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        annotation,
+        ^^^^^^^^^^^
+        alias,
+        ^^^^^^
+        select=select,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1218, in add_annotation
+    annotation = annotation.resolve_expression(self, allow_joins=True, reuse=None)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/aggregates.py", line 176, in resolve_expression
+    result = super().resolve_expression(*args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/aggregates.py", line 63, in resolve_expression
+    c = super().resolve_expression(query, allow_joins, reuse, summarize)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/expressions.py", line 300, in resolve_expression
+    expr.resolve_expression(query, allow_joins, reuse, summarize, for_save)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/expressions.py", line 902, in resolve_expression
+    return query.resolve_ref(self.name, allow_joins, reuse, summarize)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2049, in resolve_ref
+    join_info = self.setup_joins(
+        field_list, self.get_meta(), self.get_initial_alias(), can_reuse=reuse
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1900, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1805, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'id' into field. Choices are: advisor, advisor_id, application, automatic_renewal, beneficiary, commission, commission_amount, commission_rate, coverage_amount, created_at, customer, customer_id, insurance_company, insurance_id, next_review_date, notes, policy_end_date, policy_number, policy_start_date, policy_status, policy_type, premium_amount, premium_frequency, renewal_date, underwriting_class, updated_at
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+Internal Server Error: /reports/
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2237, in add_fields
+    join_info = self.setup_joins(
+        name.split(LOOKUP_SEP), opts, alias, allow_many=allow_m2m
+    )
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1900, in setup_joins
+    path, final_field, targets, rest = self.names_to_path(
+                                       ~~~~~~~~~~~~~~~~~~^
+        names[:pivot],
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        fail_on_missing=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 1805, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'lender_name' into field. Choices are: advisor, advisor_id, application, application_date, broker_fee, commission, completion_date, created_at, customer, customer_id, down_payment, interest_rate, lender, loan_amount, loan_term, loan_to_value_ratio, monthly_payment, mortgage_id, mortgage_status, mortgage_type, next_review_date, notes, property_address, property_city, property_postal_code, property_state, property_type, property_value, purpose, updated_at
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1206, in reports_view
+    mortgage_performance = get_mortgage_performance_data(mortgages)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py", line 1407, in get_mortgage_performance_data
+    lender_data = mortgages.values('lender_name').annotate(
+                  ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1368, in values
+    clone = self._values(*fields, **expressions)
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1363, in _values
+    clone.query.set_values(fields)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2563, in set_values
+    self.add_fields(field_names, True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/venv/lib/python3.13/site-packages/django/db/models/sql/query.py", line 2265, in add_fields
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'lender_name' into field. Choices are: advisor, advisor_id, application, application_date, broker_fee, commission, completion_date, created_at, customer, customer_id, down_payment, interest_rate, lender, loan_amount, loan_term, loan_to_value_ratio, monthly_payment, mortgage_id, mortgage_status, mortgage_type, next_review_date, notes, property_address, property_city, property_postal_code, property_state, property_type, property_value, purpose, updated_at
+/mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm/advisor_crm/crm/views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader

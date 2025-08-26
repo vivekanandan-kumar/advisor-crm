@@ -154,43 +154,37 @@
                 <h5 class="modal-title">Filter Renewals</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <form id="filterForm">
+            <form id="filterForm" method="GET" action="{% url 'renewal_alerts' %}">
+                <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Policy Type</label>
                         <select class="form-select" name="policy_type">
                             <option value="">All Types</option>
-                            <option value="Life Insurance">Life Insurance</option>
-                            <option value="Home Insurance">Home Insurance</option>
-                            <option value="Car Insurance">Car Insurance</option>
-                            <option value="Health Insurance">Health Insurance</option>
+                            {% for policy_type in policy_types %}
+                                <option value="{{ policy_type.0 }}" 
+                                    {% if applied_filters.policy_type == policy_type.0 %}selected{% endif %}>
+                                    {{ policy_type.1 }}
+                                </option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Time Range</label>
                         <select class="form-select" name="time_range">
-                            <option value="7">Next 7 days</option>
-                            <option value="30" selected>Next 30 days</option>
-                            <option value="90">Next 90 days</option>
-                            <option value="365">Next year</option>
+                            <option value="7" {% if applied_filters.time_range == "7" %}selected{% endif %}>Next 7 days</option>
+                            <option value="30" {% if applied_filters.time_range == "30" or not applied_filters.time_range %}selected{% endif %}>Next 30 days</option>
+                            <option value="90" {% if applied_filters.time_range == "90" %}selected{% endif %}>Next 90 days</option>
+                            <option value="365" {% if applied_filters.time_range == "365" %}selected{% endif %}>Next year</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Priority</label>
-                        <select class="form-select" name="priority">
-                            <option value="">All Priorities</option>
-                            <option value="urgent">Urgent</option>
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
-            </div>
+                    <input type="hidden" name="priority" value="{{ applied_filters.priority }}">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <button type="button" class="btn btn-outline-danger" onclick="clearFilters()">Clear Filters</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -199,8 +193,12 @@
 {% block extra_js %}
 <script>
 function exportRenewals() {
-    // Implement export functionality
-    alert('Export functionality would be implemented here');
+    // Get current filter parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('export', 'csv');
+    
+    // Redirect to export URL
+    window.location.href = '{% url "renewal_alerts" %}' + '?' + urlParams.toString();
 }
 
 function refreshData() {
@@ -208,11 +206,13 @@ function refreshData() {
 }
 
 function applyFilters() {
-    const form = document.getElementById('filterForm');
-    const formData = new FormData(form);
-    // Implement filter logic
+    // This function is no longer needed as we're using form submission
     $('#filterModal').modal('hide');
-    alert('Filters applied: ' + Array.from(formData.entries()).map(([key, val]) => `${key}=${val}`).join(', '));
+}
+
+function clearFilters() {
+    // Redirect to the page without any filter parameters
+    window.location.href = '{% url "renewal_alerts" %}';
 }
 
 // Auto-refresh every 5 minutes
@@ -226,6 +226,12 @@ document.addEventListener('DOMContentLoaded', function() {
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+    
+    // Show modal if there are filter parameters in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.toString() && !urlParams.has('export')) {
+        $('#filterModal').modal('show');
+    }
 });
 </script>
 {% endblock %}
