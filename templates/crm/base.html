@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Advisor CRM{% endblock %}</title>
+    <title>Advisor CRM - Dashboard</title>
 
     <!-- Bootstrap 5.3.2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
@@ -12,7 +11,7 @@
     <!-- Bootstrap Icons 1.11.2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
 
-    <!-- jQuery 3.7.1 (for potential plugins) -->
+    <!-- jQuery 3.7.1 -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 
     <style>
@@ -446,9 +445,14 @@
             font-weight: 600;
         }
 
-        /* Sidebar dropdown styles */
+        /* Enhanced dropdown styles for sidebar */
         .nav-dropdown {
             position: relative;
+        }
+
+        .nav-dropdown-toggle {
+            position: relative;
+            padding-right: 2rem !important;
         }
 
         .nav-dropdown-toggle::after {
@@ -457,32 +461,44 @@
             border-width: 0 2px 2px 0;
             display: inline-block;
             padding: 3px;
-            transform: rotate(45deg) translateY(-2px);
-            margin-left: 10px;
+            transform: rotate(45deg);
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            margin-top: -4px;
             transition: all 0.3s ease;
         }
 
-        .nav-dropdown-toggle.collapsed::after {
-            transform: rotate(-45deg) translateY(2px);
+        .nav-dropdown-toggle[aria-expanded="true"]::after {
+            transform: rotate(-135deg);
+            margin-top: 2px;
         }
 
         .nav-dropdown-menu {
-            list-style: none;
-            padding-left: 2rem;
-            margin: 0.5rem 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .nav-dropdown-menu.show {
-            max-height: 500px;
+            background: rgba(30, 64, 175, 0.2);
+            border-radius: 8px;
+            margin: 4px 8px;
+            padding: 8px 0;
         }
 
         .nav-dropdown-menu .nav-link {
-            padding: 8px 16px;
+            padding: 8px 16px 8px 40px;
+            margin: 2px 0;
             font-size: 0.9rem;
-            margin: 2px 8px;
+            border-radius: 8px;
+        }
+
+        .nav-dropdown-menu .nav-link:hover,
+        .nav-dropdown-menu .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+        }
+
+        /* Keep parent link highlighted when child is active */
+        .nav-dropdown-menu .nav-link.active ~ .nav-dropdown-toggle {
+            color: white;
+            background: rgba(255, 255, 255, .15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         /* Right side panel styles */
@@ -571,15 +587,12 @@
             }
         }
     </style>
-
-    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar (only show when logged in) -->
-            {% if user.is_authenticated %}
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
                 <div class="position-sticky pt-3">
                     <div class="text-center mb-4">
@@ -587,95 +600,93 @@
                         <small class="text-light">Advisor Portal</small>
                     </div>
 
-                    {% if user.is_authenticated %}
                     <div class="text-center mb-4">
                         <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center"
                             style="width: 50px; height: 50px;">
                             <i class="bi bi-person-fill text-primary fs-4"></i>
                         </div>
-                        <p class="text-white mt-2 mb-0">
-                            {% if user.first_name or user.last_name %}
-                            {{ user.first_name|title }} {{ user.last_name|title }}
-                            {% else %}
-                            {{ user.username }}
-                            {% endif %}
-                        </p>
-                        <small class="text-light">{{ user.specialization|default:"Advisor" }}</small>
+                        <p class="text-white mt-2 mb-0">{{ user.get_full_name|default:user.username }}</p>
+                        <small class="text-light">{{ user.profile.title|default:"Financial Advisor" }}</small>
                     </div>
-                    {% endif %}
 
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-                                href="{% url 'dashboard' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
                                 <i class="bi bi-speedometer2 me-2"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'customer' in request.resolver_match.url_name %}active{% endif %}"
-                                href="{% url 'customer_list' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'customer_list' %}active{% endif %}" href="{% url 'customer_list' %}">
                                 <i class="bi bi-people me-2"></i>Customers
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'application' in request.resolver_match.url_name %}active{% endif %}"
-                                href="{% url 'application_list' %}">
+                            <a class="nav-link {% if 'application' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'application_list' %}">
                                 <i class="bi bi-file-text me-2"></i>Applications
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'mortgage' in request.resolver_match.url_name %}active{% endif %}"
-                                href="{% url 'mortgage_list' %}">
+                            <a class="nav-link {% if 'mortgage' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'mortgage_list' %}">
                                 <i class="bi bi-house me-2"></i>Mortgages
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'insurance' in request.resolver_match.url_name %}active{% endif %}"
-                                href="{% url 'insurance_list' %}">
+                            <a class="nav-link {% if 'insurance' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'insurance_list' %}">
                                 <i class="bi bi-shield-check me-2"></i>Insurance
                             </a>
                         </li>
 
-                        <!-- Commission Menu Item -->
-                        <li class="nav-item">
-                            <a class="nav-link commission-panel-toggle {% if 'commission' in request.resolver_match.url_name %}active{% endif %}"
-                               data-panel="commission">
+                        <!-- Commission Dropdown Menu -->
+                        <li class="nav-item nav-dropdown">
+                            <a class="nav-link nav-dropdown-toggle {% if 'commission' in request.resolver_match.url_name %}active{% endif %}" data-bs-toggle="collapse" href="#commissionDropdown" role="button" aria-expanded="false"
+                                aria-controls="commissionDropdown">
                                 <i class="bi bi-cash-coin me-2"></i>Commissions
                             </a>
+                            <div class="collapse nav-dropdown-menu {% if 'commission' in request.resolver_match.url_name %}show{% endif %}" id="commissionDropdown">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'commission_weeks' %}active{% endif %}" href="{% url 'commission_weeks' %}">
+                                    <i class="bi bi-calendar-week me-2"></i>Commission Weeks
+                                </a>
+                                <a class="nav-link {% if request.resolver_match.url_name == 'weekly_commission_report' %}active{% endif %}" href="{% url 'weekly_commission_report' %}">
+                                    <i class="bi bi-graph-up me-2"></i>Commission Report
+                                </a>
+                                <a class="nav-link {% if request.resolver_match.url_name == 'auto_assign_applications' %}active{% endif %}" href="{% url 'auto_assign_applications' %}">
+                                    <i class="bi bi-magic me-2"></i>Auto Assign
+                                </a>
+                            </div>
                         </li>
 
-                        <!-- Payments Menu Item (Manager only) -->
-                        {% if user.is_manager %}
-                        <li class="nav-item">
-                            <a class="nav-link payment-panel-toggle {% if 'payment' in request.resolver_match.url_name %}active{% endif %}"
-                               data-panel="payment">
+                        <!-- Payments Dropdown Menu -->
+                        <li class="nav-item nav-dropdown">
+                            <a class="nav-link nav-dropdown-toggle {% if 'payment' in request.resolver_match.url_name %}active{% endif %}" data-bs-toggle="collapse" href="#paymentDropdown" role="button" aria-expanded="false"
+                                aria-controls="paymentDropdown">
                                 <i class="bi bi-credit-card me-2"></i>Payments
                             </a>
+                            <div class="collapse nav-dropdown-menu {% if 'payment' in request.resolver_match.url_name %}show{% endif %}" id="paymentDropdown">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'payment_list' %}active{% endif %}" href="{% url 'payment_list' %}">
+                                    <i class="bi bi-list-check me-2"></i>All Payments
+                                </a>
+                                <a class="nav-link {% if request.resolver_match.url_name == 'payment_create' %}active{% endif %}" href="{% url 'payment_create' %}">
+                                    <i class="bi bi-plus-circle me-2"></i>New Payment
+                                </a>
+                            </div>
                         </li>
-                        {% endif %}
 
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'renewal_alerts' %}active{% endif %}"
-                                href="{% url 'renewal_alerts' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'renewal_alerts' %}active{% endif %}" href="{% url 'renewal_alerts' %}">
                                 <i class="bi bi-clock me-2"></i>Renewals
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}"
-                                href="{% url 'reports' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}" href="{% url 'reports' %}">
                                 <i class="bi bi-graph-up me-2"></i>Reports
                             </a>
                         </li>
 
-                        <!-- Conditionally show Advisor menu item for superusers/managers -->
-                        {% if user.is_manager %}
                         <li class="nav-item">
-                            <a class="nav-link {% if 'advisor' in request.resolver_match.url_name %}active{% endif %}"
-                                href="{% url 'advisor_list' %}">
+                            <a class="nav-link {% if 'advisor' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'advisor_list' %}">
                                 <i class="bi bi-person-badge me-2"></i>Advisors
                             </a>
                         </li>
-                        {% endif %}
 
                         <hr class="text-light">
                         <li class="nav-item">
@@ -689,18 +700,20 @@
                     </ul>
                 </div>
             </nav>
-            {% endif %}
 
             <!-- Main content -->
-            <main
-                class="{% if user.is_authenticated %}col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content{% else %}col-12 public-content{% endif %}">
-                {% if user.is_authenticated %}
-
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
                 <!-- Enhanced Page Header Section -->
                 <div class="page-header-section">
                     <!-- Breadcrumb -->
-                    {% block breadcrumb %}
-                    {% endblock %}
+                    <div class="breadcrumb-section">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                                {% block breadcrumb %}{% endblock %}
+                            </ol>
+                        </nav>
+                    </div>
 
                     <!-- Page Header Content -->
                     <div class="page-header-content">
@@ -708,11 +721,14 @@
 
                         <!-- Page Actions -->
                         <div class="page-actions">
-                            {% block page_actions %}
-                            <!-- Default user info and logout for pages without specific actions -->
                             <div class="d-flex align-items-center gap-3">
-                                {% load custom_filters %}
-                                <span class="text-muted small">Welcome, {{ user|format_name }}</span>
+                                <span class="text-muted small">Welcome, {{ user.get_full_name|default:user.username }}</span>
+                                <a href="{% url 'application_create' %}" class="btn btn-outline-primary btn-sm btn-action">
+                                    <i class="bi bi-plus-circle me-1"></i>New Application
+                                </a>
+                                <a href="{% url 'customer_create' %}" class="btn btn-outline-secondary btn-sm btn-action">
+                                    <i class="bi bi-person-plus me-1"></i>Add Customer
+                                </a>
                                 <form method="post" action="{% url 'logout' %}" class="d-inline">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-outline-danger btn-sm btn-action">
@@ -720,196 +736,74 @@
                                     </button>
                                 </form>
                             </div>
-                            {% endblock %}
                         </div>
                     </div>
                 </div>
-
-                {% else %}
-                <!-- Public page header -->
-                <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-                    <div class="container">
-                        <a class="navbar-brand fw-bold" href="{% url 'home_page' %}">
-                            <span
-                                style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Pinnacle</span>
-                            Financial Solutions
-                        </a>
-                        <div class="d-flex">
-                            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm me-2">Login</a>
-                            <a href="#contact" class="btn btn-primary btn-sm">Contact Us</a>
-                        </div>
-                    </div>
-                </nav>
-                {% endif %}
 
                 <!-- Messages -->
                 {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <i class="bi bi-{% if message.tags == 'success' %}check-circle-fill{% elif message.tags == 'warning' %}exclamation-triangle-fill{% elif message.tags == 'error' %}x-circle-fill{% else %}info-circle-fill{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
                 {% endif %}
 
-                <!-- Page content -->
-                {% block content %}{% endblock %}
+                {% block content %}
+                <!-- Content will be overridden by child templates -->
+                {% endblock %}
             </main>
         </div>
     </div>
 
-    <!-- Right Side Panel -->
-    <div class="right-panel" id="rightPanel">
-        <div class="right-panel-header">
-            <h5 class="mb-0" id="panelTitle">Panel Title</h5>
-        </div>
-        <div class="right-panel-body">
-            <!-- Commission Panel Content -->
-            <div id="commissionPanel" class="panel-content d-none">
-                <div class="panel-tab active" data-tab="commission-weeks">
-                    <i class="bi bi-calendar-week me-2"></i>Commission Weeks
-                </div>
-                <div class="panel-tab" data-tab="commission-report">
-                    <i class="bi bi-graph-up me-2"></i>Commission Report
-                </div>
-                {% if user.is_manager %}
-                <div class="panel-tab" data-tab="auto-assign">
-                    <i class="bi bi-magic me-2"></i>Auto Assign
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Payment Panel Content -->
-            <div id="paymentPanel" class="panel-content d-none">
-                <div class="panel-tab active" data-tab="all-payments">
-                    <i class="bi bi-list-check me-2"></i>All Payments
-                </div>
-                <div class="panel-tab" data-tab="new-payment">
-                    <i class="bi bi-plus-circle me-2"></i>New Payment
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toggle Panel Button -->
-    <button class="btn btn-primary toggle-panel-btn" id="togglePanelBtn">
-        <i class="bi bi-layout-sidebar"></i>
-    </button>
-
     <!-- Bootstrap 5.3.2 JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 
-    {% block extra_js %}
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const rightPanel = document.getElementById('rightPanel');
-            const togglePanelBtn = document.getElementById('togglePanelBtn');
-            const panelTitle = document.getElementById('panelTitle');
-            const commissionPanel = document.getElementById('commissionPanel');
-            const paymentPanel = document.getElementById('paymentPanel');
-            let currentPanel = null;
+            // Enhanced dropdown functionality
+            document.querySelectorAll('.nav-dropdown-menu .nav-link.active').forEach(activeLink => {
+                const dropdown = activeLink.closest('.nav-dropdown-menu');
+                if (dropdown) {
+                    const toggle = dropdown.previousElementSibling;
+                    if (toggle && toggle.classList.contains('nav-dropdown-toggle')) {
+                        toggle.setAttribute('aria-expanded', 'true');
+                        dropdown.classList.add('show');
 
-            // Toggle panel visibility
-            togglePanelBtn.addEventListener('click', function() {
-                rightPanel.classList.toggle('open');
-                updateToggleButtonIcon();
+                        // Also highlight the parent toggle
+                        toggle.classList.add('active');
+                    }
+                }
             });
 
-            // Commission panel toggle
-            document.querySelectorAll('.commission-panel-toggle').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showPanel('commission', 'Commissions');
+            // Close other dropdowns when one is opened
+            document.querySelectorAll('.nav-dropdown-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    const targetId = this.getAttribute('href');
+                    const isExpanding = this.getAttribute('aria-expanded') === 'false';
+
+                    if (isExpanding) {
+                        // Close other open dropdowns
+                        document.querySelectorAll('.nav-dropdown-menu.show').forEach(openMenu => {
+                            if (openMenu.id !== targetId.replace('#', '')) {
+                                const openToggle = document.querySelector(`[href="#${openMenu.id}"]`);
+                                if (openToggle) {
+                                    openToggle.setAttribute('aria-expanded', 'false');
+                                }
+                                openMenu.classList.remove('show');
+                            }
+                        });
+                    }
                 });
-            });
-
-            // Payment panel toggle (manager only)
-            document.querySelectorAll('.payment-panel-toggle').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showPanel('payment', 'Payments');
-                });
-            });
-
-            // Tab click handlers
-            document.querySelectorAll('.panel-tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const tabName = this.getAttribute('data-tab');
-                    navigateToTab(tabName);
-                });
-            });
-
-            function showPanel(panelType, title) {
-                // Close other panels
-                commissionPanel.classList.add('d-none');
-                paymentPanel.classList.add('d-none');
-
-                // Show selected panel
-                if (panelType === 'commission') {
-                    commissionPanel.classList.remove('d-none');
-                    currentPanel = 'commission';
-                } else if (panelType === 'payment') {
-                    paymentPanel.classList.remove('d-none');
-                    currentPanel = 'payment';
-                }
-
-                panelTitle.textContent = title;
-
-                // Open panel if closed
-                if (!rightPanel.classList.contains('open')) {
-                    rightPanel.classList.add('open');
-                    updateToggleButtonIcon();
-                }
-            }
-
-            function navigateToTab(tabName) {
-                // Remove active class from all tabs
-                document.querySelectorAll('.panel-tab').forEach(tab => {
-                    tab.classList.remove('active');
-                });
-
-                // Add active class to clicked tab
-                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-
-                // Navigate to the appropriate URL
-                const urls = {
-                    'commission-weeks': "{% url 'commission_weeks' %}",
-                    'commission-report': "{% url 'weekly_commission_report' %}",
-                    'auto-assign': "{% url 'auto_assign_applications' %}",
-                    'all-payments': "{% url 'payment_list' %}",
-                    'new-payment': "{% url 'payment_create' %}"
-                };
-
-                if (urls[tabName]) {
-                    window.location.href = urls[tabName];
-                }
-            }
-
-            function updateToggleButtonIcon() {
-                const icon = togglePanelBtn.querySelector('i');
-                if (rightPanel.classList.contains('open')) {
-                    icon.classList.remove('bi-layout-sidebar');
-                    icon.classList.add('bi-x');
-                } else {
-                    icon.classList.remove('bi-x');
-                    icon.classList.add('bi-layout-sidebar');
-                }
-            }
-
-            // Close panel when clicking outside
-            document.addEventListener('click', function(e) {
-                if (rightPanel.classList.contains('open') &&
-                    !rightPanel.contains(e.target) &&
-                    !togglePanelBtn.contains(e.target) &&
-                    !e.target.classList.contains('commission-panel-toggle') &&
-                    !e.target.classList.contains('payment-panel-toggle')) {
-                    rightPanel.classList.remove('open');
-                    updateToggleButtonIcon();
-                }
             });
         });
     </script>
-    {% endblock %}
-</body>
 
+    {% block extra_scripts %}{% endblock %}
+</body>
 </html>
