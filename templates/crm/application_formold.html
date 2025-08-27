@@ -1,0 +1,173 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Application Add New{% endblock %}
+{% block page_title %}Application{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'application_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Application
+</a>
+{% endblock %}
+
+{% block content %}
+        <div id="applicationForm" class="form-container hidden">
+            <h2 class="form-title">Application Information</h2>
+            <form id="applicationFormElement">
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="customerId" class="required">Customer ID</label>
+                            <input type="number" id="customerId" name="customerId" required>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="advisorId" class="required">Advisor ID</label>
+                            <input type="number" id="advisorId" name="advisorId" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="mortgageId">Mortgage ID (if applicable)</label>
+                            <input type="number" id="mortgageId" name="mortgageId">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="insuranceId">Insurance ID (if applicable)</label>
+                            <input type="number" id="insuranceId" name="insuranceId">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="applicationType" class="required">Application Type</label>
+                            <select id="applicationType" name="applicationType" required>
+                                <option value="">Select Type</option>
+                                <option value="Mortgage">Mortgage</option>
+                                <option value="Insurance">Insurance</option>
+                                <option value="Both">Both</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="applicationNumber" class="required">Application Number</label>
+                            <input type="text" id="applicationNumber" name="applicationNumber" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="applicationStatus">Application Status</label>
+                            <select id="applicationStatus" name="applicationStatus">
+                                <option value="Initial Contact">Initial Contact</option>
+                                <option value="Documents Requested">Documents Requested</option>
+                                <option value="Documents Received">Documents Received</option>
+                                <option value="Application Submitted">Application Submitted</option>
+                                <option value="Under Review">Under Review</option>
+                                <option value="Underwriting">Underwriting</option>
+                                <option value="Additional Info Required">Additional Info Required</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Declined">Declined</option>
+                                <option value="Withdrawn">Withdrawn</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="applicationPriority">Application Priority</label>
+                            <select id="applicationPriority" name="applicationPriority">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="submittedDate">Submitted Date</label>
+                            <input type="date" id="submittedDate" name="submittedDate">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="expectedCompletionDate">Expected Completion Date</label>
+                            <input type="date" id="expectedCompletionDate" name="expectedCompletionDate">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="solicitorName">Solicitor Name</label>
+                            <input type="text" id="solicitorName" name="solicitorName">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="followUpDate">Follow-up Date</label>
+                            <input type="date" id="followUpDate" name="followUpDate">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="advisorNotes">Advisor Notes</label>
+                    <textarea id="advisorNotes" name="advisorNotes" rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="internalNotes">Internal Notes</label>
+                    <textarea id="internalNotes" name="internalNotes" rows="4"></textarea>
+                </div>
+                
+                <div class="form-footer">
+                    <button type="submit">Save Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showForm(formId) {
+            // Hide all forms
+            document.getElementById('advisorForm').classList.add('hidden');
+            document.getElementById('applicationForm').classList.add('hidden');
+            
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected form and activate its button
+            document.getElementById(formId).classList.remove('hidden');
+            event.target.classList.add('active');
+        }
+        
+        // Form submission handlers
+        document.getElementById('advisorFormElement').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Advisor information saved successfully!');
+            // Here you would typically send the data to your server
+        });
+        
+        document.getElementById('applicationFormElement').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Application information saved successfully!');
+            // Here you would typically send the data to your server
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renewal Alerts - CRM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .alert-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            border-left: 4px solid #dc3545;
+        }
+
+        .summary-card.warning {
+            border-left-color: #ffc107;
+        }
+
+        .summary-card.info {
+            border-left-color: #17a2b8;
+        }
+
+        .summary-title {
+            font-size: 0.875rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #dc3545;
+        }
+
+        .summary-card.warning .summary-value {
+            color: #ffc107;
+        }
+
+        .summary-card.info .summary-value {
+            color: #17a2b8;
+        }
+
+        .filter-tabs {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        .renewal-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .urgent {
+            color: #dc3545;
+        }
+
+        .warning {
+            color: #ffc107;
+        }
+
+        .upcoming {
+            color: #17a2b8;
+        }
+
+        .renewal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1rem;
+        }
+
+        .renewal-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            overflow: hidden;
+            border-left: 4px solid #dc3545;
+            transition: transform 0.3s ease;
+        }
+
+        .renewal-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .renewal-card.warning {
+            border-left-color: #ffc107;
+        }
+
+        .renewal-card.info {
+            border-left-color: #17a2b8;
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .customer-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .policy-type {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .renewal-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .days-left {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .urgent .days-left {
+            color: #dc3545;
+        }
+
+        .warning .days-left {
+            color: #ffc107;
+        }
+
+        .upcoming .days-left {
+            color: #17a2b8;
+        }
+
+        .card-actions {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #6c757d;
+            color: #6c757d;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .priority-urgent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .priority-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .priority-low {
+            background: #cce5ff;
+            color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Renewal Alerts & Notifications</h1>
+    </header>
+
+    <div class="container">
+        <div class="alert-summary">
+            <div class="summary-card">
+                <div class="summary-title">Urgent (≤ 7 days)</div>
+                <div class="summary-value">{{ urgent_renewals|default:"0" }}</div>
+            </div>
+            <div class="summary-card warning">
+                <div class="summary-title">Warning (≤ 30 days)</div>
+                <div class="summary-value">{{ warning_renewals|default:"0" }}</div>
+            </div>
+            <div class="summary-card info">
+                <div class="summary-title">Upcoming (≤ 90 days)</div>
+                <div class="summary-value">{{ upcoming_renewals|default:"0" }}</div>
+            </div>
+            <div class="summary-card info">
+                <div class="summary-title">Total This Quarter</div>
+                <div class="summary-value">{{ total_renewals|default:"0" }}</div>
+            </div>
+        </div>
+
+        <div class="filter-tabs">
+            <button class="tab active" onclick="showTab('all')">All Renewals</button>
+            <button class="tab" onclick="showTab('insurance')">Insurance</button>
+            <button class="tab" onclick="showTab('mortgage')">Mortgages</button>
+            <button class="tab" onclick="showTab('overdue')">Overdue</button>
+        </div>
+
+        <!-- Urgent Renewals -->
+        {% if urgent_items %}
+        <div class="renewal-section">
+            <h2 class="section-title urgent">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Urgent Renewals (≤ 7 days)
+            </h2>
+            <div class="renewal-grid">
+                {% for item in urgent_items %}
+                <div class="renewal-card urgent">
+                    <div class="card-header">
+                        <div class="customer-name">{{ item.customer.first_name }} {{ item.customer.last_name }}</div>
+                        <div class="policy-type">{{ item.policy_type }} - #{{ item.policy_number }}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="renewal-info">
+                            <div class="info-group">
+                                <div class="info-label">Expiry Date</div>
+                                <div class="info-value">{{ item.expiry_date|date:"M d, Y" }}</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Days Left</div>
+                                <div class="info-value days-left">{{ item.days_until_expiry }} days</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Premium</div>
+                                <div class="info-value">£{{ item.premium|floatformat:2 }}</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Priority</div>
+                                <div class="info-value">
+                                    <span class="priority-badge priority-urgent">Urgent</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="#" class="btn btn-primary">Renew Now</a>
+                        <a href="#" class="btn btn-outline">Contact Customer</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Warning Renewals -->
+        {% if warning_items %}
+        <div class="renewal-section">
+            <h2 class="section-title warning">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 9v3m0 3h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                Warning Renewals (8-30 days)
+            </h2>
+            <div class="renewal-grid">
+                {% for item in warning_items %}
+                <div class="renewal-card warning">
+                    <div class="card-header">
+                        <div class="customer-name">{{ item.customer.first_name }} {{ item.customer.last_name }}</div>
+                        <div class="policy-type">{{ item.policy_type }} - #{{ item.policy_number }}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="renewal-info">
+                            <div class="info-group">
+                                <div class="info-label">Expiry Date</div>
+                                <div class="info-value">{{ item.expiry_date|date:"M d, Y" }}</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Days Left</div>
+                                <div class="info-value days-left">{{ item.days_until_expiry }} days</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Premium</div>
+                                <div class="info-value">£{{ item.premium|floatformat:2 }}</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Priority</div>
+                                <div class="info-value">
+                                    <span class="priority-badge priority-medium">Medium</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="#" class="btn btn-primary">Prepare Renewal</a>
+                        <a href="#" class="btn btn-outline">View Details</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Upcoming Renewals -->
+        {% if upcoming_items %}
+        <div class="renewal-section">
+            <h2 class="section-title upcoming">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Upcoming Renewals (31-90 days)
+            </h2>
+            <div class="renewal-grid">
+                {% for item in upcoming_items %}
+                <div class="renewal-card info">
+                    <div class="card-header">
+                        <div class="customer-name">{{ item.customer.first_name }} {{ item.customer.last_name }}</div>
+                        <div class="policy-type">{{ item.policy_type }} - #{{ item.policy_number }}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="renewal-info">
+                            <div class="info-group">
+                                <div class="info-label">Expiry Date</div>
+                                <div class="info-value">{{ item.expiry_date|date:"M d, Y" }}</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Days Left</div>
+                                <div class="info-value days-left">{{ item.days_until_expiry }} days</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Premium</div>
+                                <div class="info-value">£{{ item.premium|floatformat:2 }}</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Priority</div>
+                                <div class="info-value">
+                                    <span class="priority-badge priority-low">Low</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="#" class="btn btn-outline">Schedule Review</a>
+                        <a href="#" class="btn btn-outline">View Policy</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not urgent_items and not warning_items and not upcoming_items %}
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+                <polyline points="22,4 12,14.01 9,11.01"></polyline>
+            </svg>
+            <h3>All caught up!</h3>
+            <p>No immediate renewal alerts. Check back later for updates.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+
+            // Filter renewal cards based on tab selection
+            const cards = document.querySelectorAll('.renewal-card');
+            cards.forEach(card => {
+                if (tabName === 'all') {
+                    card.style.display = 'block';
+                } else {
+                    // Implement filtering logic based on your data structure
+                    card.style.display = 'block';
+                }
+            });
+        }
+
+        // Auto-refresh alerts every 5 minutes
+        setInterval(() => {
+            location.reload();
+        }, 300000);
+    </script>
+</body>
+</html>

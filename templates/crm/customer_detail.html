@@ -1,0 +1,396 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}{{ customer.first_name }} {{ customer.last_name }} - Advisor CRM{% endblock %}
+{% block page_title %}Customer Details: {{ customer.first_name }} {{ customer.last_name }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'customer_list' %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> Back to Customers
+</a>
+<a href="{% url 'customer_update' customer.pk %}" class="btn btn-outline-primary">
+    <i class="bi bi-pencil"></i> Edit Customer
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Customer Information Card -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person me-2"></i>Personal Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>First Name:</strong><br>
+                        {{ customer.first_name }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Last Name:</strong><br>
+                        {{ customer.last_name }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Email:</strong><br>
+                        {{ customer.email }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Alternate Email:</strong><br>
+                        {{ customer.alternate_email|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Phone:</strong><br>
+                        {{ customer.phone|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Mobile:</strong><br>
+                        {{ customer.mobile|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Date of Birth:</strong><br>
+                        {{ customer.date_of_birth|date:"M d, Y"|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Marital Status:</strong><br>
+                        {{ customer.marital_status|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Dependents:</strong><br>
+                        {{ customer.dependents }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employment Information Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-briefcase me-2"></i>Employment Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Employment Status:</strong><br>
+                        {{ customer.employment_status }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Employer:</strong><br>
+                        {{ customer.employer|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Job Title:</strong><br>
+                        {{ customer.job_title|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Annual Income:</strong><br>
+                        £{{ customer.annual_income|default:"0"|floatformat:2 }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Address & Additional Information Card -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-house me-2"></i>Address Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Address:</strong><br>
+                    {{ customer.address|default:"-"|linebreaks }}
+                </div>
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>City:</strong><br>
+                        {{ customer.city|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>State:</strong><br>
+                        {{ customer.state|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Postal Code:</strong><br>
+                        {{ customer.postal_code|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Country:</strong><br>
+                        {{ customer.country|default:"-" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Additional Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Lead Source:</strong><br>
+                    {{ customer.lead_source|default:"-" }}
+                </div>
+                <div class="mb-2">
+                    <strong>Assigned Advisor:</strong><br>
+                    {% if customer.advisor %}
+                        {{ customer.advisor.get_full_name|default:customer.advisor.username }}
+                    {% else %}
+                        <span class="text-muted">Unassigned</span>
+                    {% endif %}
+                </div>
+                <div class="mb-2">
+                    <strong>Notes:</strong><br>
+                    {{ customer.notes|default:"No notes"|linebreaks }}
+                </div>
+                <div class="mb-2">
+                    <strong>Created:</strong><br>
+                    {{ customer.created_at|date:"M d, Y H:i" }}
+                </div>
+                <div class="mb-2">
+                    <strong>Last Updated:</strong><br>
+                    {{ customer.updated_at|date:"M d, Y H:i" }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for Related Information -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#mortgages">
+                            <i class="bi bi-house me-1"></i> Mortgages ({{ mortgages|length }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#insurance">
+                            <i class="bi bi-shield me-1"></i> Insurance Policies ({{ insurance_policies|length }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#applications">
+                            <i class="bi bi-file-text me-1"></i> Applications ({{ applications|length }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#communications">
+                            <i class="bi bi-chat me-1"></i> Communications ({{ communications|length }})
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <!-- Mortgages Tab -->
+                    <div class="tab-pane fade show active" id="mortgages">
+                        {% if mortgages %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Property Address</th>
+                                            <th>Loan Amount</th>
+                                            <th>Mortgage Type</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for mortgage in mortgages %}
+                                        <tr>
+                                            <td>{{ mortgage.property_address|truncatewords:5 }}</td>
+                                            <td>£{{ mortgage.loan_amount|floatformat:2 }}</td>
+                                            <td>{{ mortgage.mortgage_type }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if mortgage.mortgage_status == 'Approved' %}success{% elif mortgage.mortgage_status == 'Application' %}warning{% else %}secondary{% endif %}">
+                                                    {{ mortgage.mortgage_status }}
+                                                </span>
+                                            </td>
+                                            <td>{{ mortgage.created_at|date:"M d, Y" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No mortgages found for this customer.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Insurance Tab -->
+                    <div class="tab-pane fade" id="insurance">
+                        {% if insurance_policies %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Policy Type</th>
+                                            <th>Policy Number</th>
+                                            <th>Coverage Amount</th>
+                                            <th>Status</th>
+                                            <th>Renewal Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for policy in insurance_policies %}
+                                        <tr>
+                                            <td>{{ policy.policy_type }}</td>
+                                            <td>{{ policy.policy_number|default:"-" }}</td>
+                                            <td>£{{ policy.coverage_amount|floatformat:2 }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if policy.policy_status == 'Active' %}success{% else %}secondary{% endif %}">
+                                                    {{ policy.policy_status }}
+                                                </span>
+                                            </td>
+                                            <td>{{ policy.renewal_date|date:"M d, Y"|default:"-" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No insurance policies found for this customer.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Applications Tab -->
+                    <div class="tab-pane fade" id="applications">
+                        {% if applications %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Application #</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Priority</th>
+                                            <th>Submitted</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for application in applications %}
+                                        <tr>
+                                            <td>{{ application.application_number }}</td>
+                                            <td>{{ application.application_type }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if application.application_status == 'Approved' %}success{% elif application.application_status == 'Under Review' %}warning{% else %}secondary{% endif %}">
+                                                    {{ application.application_status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if application.application_priority == 'High' %}danger{% elif application.application_priority == 'Medium' %}warning{% else %}info{% endif %}">
+                                                    {{ application.application_priority }}
+                                                </span>
+                                            </td>
+                                            <td>{{ application.submitted_date|date:"M d, Y"|default:"Not submitted" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No applications found for this customer.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Communications Tab -->
+                    <div class="tab-pane fade" id="communications">
+                        {% if communications %}
+                            <div class="timeline">
+                                {% for communication in communications %}
+                                <div class="timeline-item">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="mb-1">{{ communication.communication_type }} - {{ communication.direction }}</h6>
+                                            <small class="text-muted">{{ communication.communication_date|date:"M d, Y H:i" }}</small>
+                                        </div>
+                                        {% if communication.subject %}
+                                            <p class="mb-1"><strong>{{ communication.subject }}</strong></p>
+                                        {% endif %}
+                                        <p class="mb-1">{{ communication.content|truncatewords:20 }}</p>
+                                        {% if communication.outcome %}
+                                            <p class="mb-1"><strong>Outcome:</strong> {{ communication.outcome }}</p>
+                                        {% endif %}
+                                        {% if communication.follow_up_required and communication.follow_up_date %}
+                                            <small class="text-warning">
+                                                <i class="bi bi-flag"></i> Follow up required on {{ communication.follow_up_date|date:"M d, Y" }}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No communications found for this customer.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Communication Button -->
+<div class="row mt-4">
+    <div class="col-12">
+        <a href="{% url 'communication_create' customer.pk %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Communication
+        </a>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -2rem;
+        top: 0.5rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #0d6efd;
+    }
+    .timeline-content {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+        border-left: 3px solid #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize tabs
+    document.addEventListener('DOMContentLoaded', function() {
+        const triggerTabList = document.querySelectorAll('[data-bs-toggle="tab"]');
+        triggerTabList.forEach(triggerEl => {
+            new bootstrap.Tab(triggerEl);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

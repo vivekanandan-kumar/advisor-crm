@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports & Analytics - CRM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6f42c1 0%, #007bff 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .report-filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .filter-input {
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6f42c1 0%, #007bff 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.4);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #6f42c1 0%, #007bff 100%);
+        }
+
+        .kpi-title {
+            font-size: 0.875rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-change {
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .kpi-change.positive {
+            color: #28a745;
+        }
+
+        .kpi-change.negative {
+            color: #dc3545;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .report-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .table-header {
+            padding: 1.5rem 2rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #6f42c1;
+            color: #6f42c1;
+        }
+
+        .btn-outline:hover {
+            background: #6f42c1;
+            color: white;
+        }
+
+        .metric-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .report-filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Reports & Analytics Dashboard</h1>
+    </header>
+
+    <div class="container">
+        <!-- Filters -->
+        <div class="report-filters">
+            <div class="filter-group">
+                <label class="filter-label">Date Range</label>
+                <select class="filter-input">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 3 months</option>
+                    <option value="365">Last year</option>
+                    <option value="custom">Custom range</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Report Type</label>
+                <select class="filter-input">
+                    <option value="overview" selected>Overview</option>
+                    <option value="sales">Sales Performance</option>
+                    <option value="renewals">Renewal Rates</option>
+                    <option value="customer">Customer Analytics</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Product Type</label>
+                <select class="filter-input">
+                    <option value="all" selected>All Products</option>
+                    <option value="insurance">Insurance</option>
+                    <option value="mortgage">Mortgages</option>
+                    <option value="investment">Investments</option>
+                </select>
+            </div>
+            <button class="btn btn-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                Generate Report
+            </button>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Total Revenue</div>
+                <div class="kpi-value">£{{ total_revenue|default:"0"|floatformat:0 }}</div>
+                <div class="kpi-change positive">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    +{{ revenue_growth|default:"0" }}% vs last period
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">New Customers</div>
+                <div class="kpi-value">{{ new_customers|default:"0" }}</div>
+                <div class="kpi-change positive">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    +{{ customer_growth|default:"0" }}% growth
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Conversion Rate</div>
+                <div class="kpi-value">{{ conversion_rate|default:"0" }}%</div>
+                <div class="kpi-change negative">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                        <polyline points="17 18 23 18 23 12"></polyline>
+                    </svg>
+                    {{ conversion_change|default:"0" }}% vs last period
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Active Policies</div>
+                <div class="kpi-value">{{ active_policies|default:"0" }}</div>
+                <div class="kpi-change positive">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    {{ policy_growth|default:"0" }} new this month
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3 class="chart-title">Revenue Trends</h3>
+                <canvas id="revenueChart" width="400" height="200"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Product Mix</h3>
+                <canvas id="productChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3 class="chart-title">Customer Acquisition</h3>
+                <canvas id="customerChart" width="400" height="200"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Application Status</h3>
+                <canvas id="applicationChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="metric-comparison">
+            <div class="metric-item">
+                <div class="metric-label">Average Deal Size</div>
+                <div class="metric-value">£{{ avg_deal_size|default:"0"|floatformat:0 }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">Renewal Rate</div>
+                <div class="metric-value">{{ renewal_rate|default:"0" }}%</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">Customer Lifetime Value</div>
+                <div class="metric-value">£{{ customer_ltv|default:"0"|floatformat:0 }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">Avg. Response Time</div>
+                <div class="metric-value">{{ avg_response_time|default:"0" }}h</div>
+            </div>
+        </div>
+
+        <!-- Export Options -->
+        <div class="export-buttons">
+            <button class="btn btn-outline" onclick="exportToPDF()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                    <polyline points="14,2 14,8 20,8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10,9 9,9 8,9"></polyline>
+                </svg>
+                Export PDF
+            </button>
+            <button class="btn btn-outline" onclick="exportToExcel()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                    <polyline points="14,2 14,8 20,8"></polyline>
+                    <rect x="8" y="13" width="2" height="3"></rect>
+                    <rect x="14" y="13" width="2" height="3"></rect>
+                </svg>
+                Export Excel
+            </button>
+            <button class="btn btn-outline" onclick="scheduleReport()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Schedule Report
+            </button>
+        </div>
+
+        <!-- Detailed Table -->
+        <div class="report-table">
+            <div class="table-header">
+                <h3 class="table-title">Top Performing Products</h3>
+                <button class="btn btn-outline btn-sm">View All</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Sales Count</th>
+                        <th>Revenue</th>
+                        <th>Conversion Rate</th>
+                        <th>Avg. Deal Size</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in top_products %}
+                    <tr>
+                        <td><strong>{{ product.name }}</strong></td>
+                        <td>{{ product.sales_count }}</td>
+                        <td>£{{ product.revenue|floatformat:2 }}</td>
+                        <td>{{ product.conversion_rate }}%</td>
+                        <td>£{{ product.avg_deal_size|floatformat:2 }}</td>
+                        <td>
+                            {% if product.trend == 'up' %}
+                            <span style="color: #28a745;">↗ {{ product.trend_percentage }}%</span>
+                            {% elif product.trend == 'down' %}
+                            <span style="color: #dc3545;">↘ {{ product.trend_percentage }}%</span>
+                            {% else %}
+                            <span style="color: #6c757d;">→ {{ product.trend_percentage }}%</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #6c757d; padding: 2rem;">
+                            No data available for the selected period.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Revenue Trend Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Revenue',
+                    data: [12000, 19000, 15000, 25000, 22000, 30000],
+                    borderColor: '#6f42c1',
+                    backgroundColor: 'rgba(111, 66, 193, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '£' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Product Mix Chart
+        const productCtx = document.getElementById('productChart').getContext('2d');
+        new Chart(productCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Life Insurance', 'Home Insurance', 'Car Insurance', 'Mortgages'],
+                datasets: [{
+                    data: [35, 25, 20, 20],
+                    backgroundColor: [
+                        '#6f42c1',
+                        '#007bff',
+                        '#28a745',
+                        '#ffc107'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Customer Acquisition Chart
+        const customerCtx = document.getElementById('customerChart').getContext('2d');
+        new Chart(customerCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'New Customers',
+                    data: [45, 52, 48, 61, 55, 67],
+                    backgroundColor: '#007bff',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Application Status Chart
+        const applicationCtx = document.getElementById('applicationChart').getContext('2d');
+        new Chart(applicationCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Approved', 'Pending', 'Rejected', 'Under Review'],
+                datasets: [{
+                    data: [45, 25, 15, 15],
+                    backgroundColor: [
+                        '#28a745',
+                        '#ffc107',
+                        '#dc3545',
+                        '#17a2b8'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Export Functions
+        function exportToPDF() {
+            alert('PDF export functionality would be implemented here');
+        }
+
+        function exportToExcel() {
+            alert('Excel export functionality would be implemented here');
+        }
+
+        function scheduleReport() {
+            alert('Report scheduling functionality would be implemented here');
+        }
+
+        // Auto-refresh data every 5 minutes
+        setInterval(() => {
+            // Refresh charts and data
+            console.log('Refreshing report data...');
+        }, 300000);
+    </script>
+</body>
+</html>

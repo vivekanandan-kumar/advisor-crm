@@ -1,0 +1,69 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Assign Application to Commission Week</h1>
+        <a href="{% url 'application_detail' application.pk %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left fa-sm"></i> Back to Application
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Application Details</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Application:</strong> {{ application.application_number }}</p>
+                    <p><strong>Customer:</strong> {{ application.customer.first_name }} {{ application.customer.last_name }}</p>
+                    <p><strong>Type:</strong> {{ application.application_type }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Status:</strong> {{ application.application_status }}</p>
+                    <p><strong>Advisor:</strong> {{ application.advisor.get_full_name }}</p>
+                    <p><strong>Created:</strong> {{ application.created_at|date:"M d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Select Commission Week</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    {{ form.commission_week.label_tag }}
+                    {{ form.commission_week }}
+                    {% if form.commission_week.errors %}
+                    <div class="text-danger">{{ form.commission_week.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>Note:</strong> Commission will be automatically calculated based on the application type:
+                    <ul class="mb-0 mt-2">
+                        <li>Mortgage: 0.5% of loan amount</li>
+                        <li>Insurance: 20% of premium amount</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Assign to Week</button>
+                <a href="{% url 'application_detail' application.pk %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

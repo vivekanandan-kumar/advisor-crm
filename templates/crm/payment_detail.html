@@ -1,0 +1,77 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Payment Details</h1>
+        <div>
+            <a href="{% url 'payment_update' payment.pk %}" class="btn btn-warning btn-sm">
+                <i class="fas fa-edit fa-sm"></i> Edit Payment
+            </a>
+            <a href="{% url 'payment_list' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left fa-sm"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Payment ID:</strong> {{ payment.payment_id }}</p>
+                            <p><strong>Customer:</strong> {{ payment.customer.first_name }} {{ payment.customer.last_name }}</p>
+                            <p><strong>Amount:</strong> £{{ payment.amount|floatformat:2 }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Method:</strong> {{ payment.payment_method }}</p>
+                            <p><strong>Status:</strong>
+                                <span class="badge badge-{% if payment.payment_status == 'Completed' %}success{% elif payment.payment_status == 'Pending' %}warning{% elif payment.payment_status == 'Failed' %}danger{% else %}info{% endif %}">
+                                    {{ payment.payment_status }}
+                                </span>
+                            </p>
+                            <p><strong>Date:</strong> {{ payment.payment_date|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Reference Information</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Reference Number:</strong> {{ payment.reference_number|default:"N/A" }}</p>
+                    {% if payment.application %}
+                    <p><strong>Application:</strong> {{ payment.application.application_number }}</p>
+                    {% endif %}
+                    {% if payment.mortgage %}
+                    <p><strong>Mortgage:</strong> {{ payment.mortgage.mortgage_id }}</p>
+                    {% endif %}
+                    {% if payment.insurance %}
+                    <p><strong>Insurance:</strong> {{ payment.insurance.policy_number }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if payment.notes %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Notes</h6>
+        </div>
+        <div class="card-body">
+            {{ payment.notes|linebreaks }}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

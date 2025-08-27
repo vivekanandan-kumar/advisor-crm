@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortgages - CRM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filters select {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .mortgage-type {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .rate {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+
+        .btn-outline:hover {
+            background: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Mortgage Portfolio</h1>
+    </header>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_mortgages|default:"0" }}</div>
+                <div class="stat-label">Total Mortgages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">£{{ total_value|default:"0"|floatformat:0 }}</div>
+                <div class="stat-label">Total Portfolio Value</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ avg_rate|default:"0"|floatformat:2 }}%</div>
+                <div class="stat-label">Average Interest Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ active_mortgages|default:"0" }}</div>
+                <div class="stat-label">Active Mortgages</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a href="{% url 'mortgage_create' %}" class="btn btn-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
+                    <polyline points="9,22 9,12 15,12 15,22"></polyline>
+                </svg>
+                New Mortgage
+            </a>
+
+            <div class="filters">
+                <select onchange="filterMortgages(this.value)">
+                    <option value="">All Types</option>
+                    <option value="fixed">Fixed Rate</option>
+                    <option value="variable">Variable Rate</option>
+                    <option value="interest_only">Interest Only</option>
+                </select>
+                <select onchange="filterByStatus(this.value)">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Property Address</th>
+                        <th>Loan Amount</th>
+                        <th>Interest Rate</th>
+                        <th>Type</th>
+                        <th>Term</th>
+                        <th>Start Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mortgage in mortgages %}
+                    <tr>
+                        <td>
+                            <strong>{{ mortgage.customer.first_name }} {{ mortgage.customer.last_name }}</strong><br>
+                            <small>{{ mortgage.customer.email }}</small>
+                        </td>
+                        <td>{{ mortgage.property_address|default:"N/A" }}</td>
+                        <td><strong>£{{ mortgage.loan_amount|floatformat:2 }}</strong></td>
+                        <td class="rate">{{ mortgage.interest_rate }}%</td>
+                        <td>
+                            <span class="mortgage-type">{{ mortgage.get_mortgage_type_display }}</span>
+                        </td>
+                        <td>{{ mortgage.term_years }} years</td>
+                        <td>{{ mortgage.start_date|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="#" class="btn btn-outline btn-sm">View</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #6c757d; padding: 3rem;">
+                            No mortgages found. <a href="{% url 'mortgage_create' %}">Create the first one</a>.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function filterMortgages(type) {
+            // Implementation for filtering mortgages by type
+            console.log('Filtering by type:', type);
+        }
+
+        function filterByStatus(status) {
+            // Implementation for filtering mortgages by status
+            console.log('Filtering by status:', status);
+        }
+    </script>
+</body>
+</html>

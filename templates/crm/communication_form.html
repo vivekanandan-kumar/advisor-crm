@@ -1,0 +1,132 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Add Communication - {{ customer.first_name }} {{ customer.last_name }}{% endblock %}
+{% block page_title %}Add Communication{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'customer_detail' customer.pk %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> Back to Customer
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-chat me-2"></i>Log Communication for {{ customer.first_name }} {{ customer.last_name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Please correct the errors below:</strong>
+                            {{ form.errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.communication_type.id_for_label }}" class="form-label">Communication Type</label>
+                                {{ form.communication_type }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.direction.id_for_label }}" class="form-label">Direction</label>
+                                {{ form.direction }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.subject.id_for_label }}" class="form-label">Subject</label>
+                        {{ form.subject }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">Content</label>
+                        {{ form.content }}
+                        <div class="form-text">Describe the communication in detail.</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.communication_date.id_for_label }}" class="form-label">Date</label>
+                                {{ form.communication_date }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.communication_time.id_for_label }}" class="form-label">Time</label>
+                                {{ form.communication_time }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.outcome.id_for_label }}" class="form-label">Outcome</label>
+                        {{ form.outcome }}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    {{ form.follow_up_required }}
+                                    <label class="form-check-label" for="{{ form.follow_up_required.id_for_label }}">
+                                        Follow up required
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.follow_up_date.id_for_label }}" class="form-label">Follow up date</label>
+                                {{ form.follow_up_date }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Save Communication
+                        </button>
+                        <a href="{% url 'customer_detail' customer.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    /* Style form fields to look better */
+    select.form-control, 
+    input.form-control, 
+    textarea.form-control {
+        width: 100%;
+    }
+    
+    textarea.form-control {
+        min-height: 100px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize date pickers if needed
+    document.addEventListener('DOMContentLoaded', function() {
+        // You can add datepicker initialization here if using a datepicker library
+    });
+</script>
+{% endblock %}
+{% endblock %}

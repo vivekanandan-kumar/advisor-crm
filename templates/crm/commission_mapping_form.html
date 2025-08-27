@@ -1,0 +1,84 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Update Commission Mapping</h1>
+        <a href="{% url 'commission_week_detail' mapping.commission_week.pk %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left fa-sm"></i> Back to Week
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Mapping Details</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Application:</strong> {{ mapping.application.application_number }}</p>
+                    <p><strong>Customer:</strong> {{ mapping.application.customer.first_name }} {{ mapping.application.customer.last_name }}</p>
+                    <p><strong>Type:</strong> {{ mapping.application.application_type }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Commission Week:</strong> Week {{ mapping.commission_week.week_number }} {{ mapping.commission_week.year }}</p>
+                    <p><strong>Advisor:</strong> {{ mapping.commission_week.advisor.get_full_name }}</p>
+                    <p><strong>Estimated:</strong> £{{ mapping.estimated_commission|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Commission Details</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.commission_rate.label_tag }}
+                            {{ form.commission_rate }}
+                            {% if form.commission_rate.errors %}
+                            <div class="text-danger">{{ form.commission_rate.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Commission percentage rate</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.actual_commission.label_tag }}
+                            {{ form.actual_commission }}
+                            {% if form.actual_commission.errors %}
+                            <div class="text-danger">{{ form.actual_commission.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Actual commission amount to be paid</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form.notes.label_tag }}
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                    <div class="text-danger">{{ form.notes.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary">Update Commission</button>
+                <a href="{% url 'commission_week_detail' mapping.commission_week.pk %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+# Django project requirements
+# Generated from current environment
+
+Django==4.2.8
+django-admin-adminlte==1.0.14
+django-widget-tweaks==1.5.0
+gunicorn==21.2.0
+mysqlclient==2.2.4
+pillow==11.1.0

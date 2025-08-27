@@ -1,0 +1,236 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Mortgages - Advisor CRM{% endblock %}
+{% block page_title %}Mortgages{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'mortgage_create' %}" class="btn btn-primary">
+    <i class="bi bi-house-add"></i> Add Mortgage
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="mb-0">Mortgage Portfolio</h5>
+                    </div>
+                    <div class="col-auto">
+                        <form method="get" class="d-flex">
+                            <input type="text" name="search" class="form-control me-2" placeholder="Search mortgages..." 
+                                   value="{{ request.GET.search }}">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top pagination -->
+            {% if is_paginated %}
+            <div class="card-header py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }} mortgages
+                    </small>
+                    <nav aria-label="Mortgage pagination">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="card-body p-0">
+                {% if mortgages %}
+                    <div class="table-container" style="max-height: 65vh; overflow: auto;">
+                        <table class="table table-hover mb-0 sticky-header">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Property Address</th>
+                                    <th>Loan Amount</th>
+                                    <th>Interest Rate</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th class="action-column">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mortgage in mortgages %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ mortgage.customer.first_name }} {{ mortgage.customer.last_name }}</strong><br>
+                                            <small class="text-muted">{{ mortgage.customer.email }}</small>
+                                        </td>
+                                        <td>
+                                            {{ mortgage.property_address|truncatewords:3 }}<br>
+                                            <small class="text-muted">{{ mortgage.property_city|default:"" }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>£{{ mortgage.loan_amount|floatformat:2 }}</strong><br>
+                                            <small class="text-muted">Value: £{{ mortgage.property_value|floatformat:2 }}</small>
+                                        </td>
+                                        <td>
+                                            {% if mortgage.interest_rate %}
+                                                {{ mortgage.interest_rate }}%
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ mortgage.mortgage_type }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if mortgage.mortgage_status == 'Approved' %}success{% elif mortgage.mortgage_status == 'Completed' %}success{% elif mortgage.mortgage_status == 'Application' %}warning{% else %}secondary{% endif %}">
+                                                {{ mortgage.mortgage_status }}
+                                            </span>
+                                        </td>
+                                        <td>{{ mortgage.created_at|date:"M d, Y" }}</td>
+                                        <td class="action-column">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'mortgage_detail' mortgage.pk %}" class="btn btn-outline-primary" title="View">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'mortgage_update' mortgage.pk %}" class="btn btn-outline-secondary" title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Bottom pagination -->
+                    {% if is_paginated %}
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }} mortgages
+                                </small>
+                                <nav aria-label="Mortgage pagination">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        {% if page_obj.has_previous %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        {% for num in page_obj.paginator.page_range %}
+                                            {% if page_obj.number == num %}
+                                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                                <li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a></li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if page_obj.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="bi bi-house display-1 text-muted"></i>
+                        <p class="text-muted mt-3">No mortgages found.</p>
+                        <a href="{% url 'mortgage_create' %}" class="btn btn-primary">Add Your First Mortgage</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    /* Container for table with fixed header and horizontal scroll */
+    .table-container {
+        position: relative;
+        overflow: auto;
+    }
+    
+    /* Make the header sticky */
+    .sticky-header thead th {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 10;
+        box-shadow: inset 0 -1px 0 #dee2e6;
+    }
+    
+    /* Ensure action column has fixed width */
+    .action-column {
+        width: 100px;
+        min-width: 100px;
+    }
+    
+    /* Style for horizontal scrollbar to make it more visible */
+    .table-container::-webkit-scrollbar {
+        height: 12px;
+    }
+    
+    .table-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .table-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    .table-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Make horizontal scroll more obvious by adding a shadow when scrolled
+    const tableContainer = document.querySelector('.table-container');
+    if (tableContainer) {
+        tableContainer.addEventListener('scroll', function() {
+            if (this.scrollLeft > 0) {
+                this.style.boxShadow = 'inset 5px 0 5px -5px rgba(0,0,0,0.1)';
+            } else {
+                this.style.boxShadow = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

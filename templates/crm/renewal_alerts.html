@@ -1,0 +1,237 @@
+{% extends 'crm/base.html' %}
+{% load humanize %}
+
+{% block title %}Renewal Alerts & Notifications{% endblock %}
+{% block page_title %}Renewal Alerts & Management{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex gap-2">
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+        <i class="bi bi-funnel me-2"></i>Filter
+    </button>
+    <button class="btn btn-outline-secondary" onclick="exportRenewals()">
+        <i class="bi bi-download me-2"></i>Export
+    </button>
+    <button class="btn btn-primary" onclick="refreshData()">
+        <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger bg-opacity-10 border-danger">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="text-danger mb-0">{{ overdue_count|default:0 }}</h5>
+                            <span class="text-muted">Overdue Renewals</span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-exclamation-triangle display-4 text-danger opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning bg-opacity-10 border-warning">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="text-warning mb-0">{{ urgent_count|default:0 }}</h5>
+                            <span class="text-muted">Urgent (≤ 7 days)</span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-clock display-4 text-warning opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info bg-opacity-10 border-info">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="text-info mb-0">{{ warning_count|default:0 }}</h5>
+                            <span class="text-muted">Warning (8-30 days)</span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-calendar display-4 text-info opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success bg-opacity-10 border-success">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="text-success mb-0">{{ upcoming_count|default:0 }}</h5>
+                            <span class="text-muted">Upcoming (31-90 days)</span>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-calendar-check display-4 text-success opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <ul class="nav nav-pills nav-justified" id="renewalTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-tab" data-bs-toggle="pill" data-bs-target="#all" type="button">
+                        All Renewals ({{ total_count|default:0 }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="overdue-tab" data-bs-toggle="pill" data-bs-target="#overdue" type="button">
+                        Overdue ({{ overdue_count|default:0 }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="urgent-tab" data-bs-toggle="pill" data-bs-target="#urgent" type="button">
+                        Urgent ({{ urgent_count|default:0 }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="warning-tab" data-bs-toggle="pill" data-bs-target="#warning" type="button">
+                        Warning ({{ warning_count|default:0 }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="upcoming-tab" data-bs-toggle="pill" data-bs-target="#upcoming" type="button">
+                        Upcoming ({{ upcoming_count|default:0 }})
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="renewalTabsContent">
+        <!-- All Renewals -->
+        <div class="tab-pane fade show active" id="all">
+            {% include 'crm/partials/renewal_table.html' with renewals=all_renewals %}
+        </div>
+
+        <!-- Overdue -->
+        <div class="tab-pane fade" id="overdue">
+            {% include 'crm/partials/renewal_table.html' with renewals=overdue_renewals %}
+        </div>
+
+        <!-- Urgent -->
+        <div class="tab-pane fade" id="urgent">
+            {% include 'crm/partials/renewal_table.html' with renewals=urgent_renewals %}
+        </div>
+
+        <!-- Warning -->
+        <div class="tab-pane fade" id="warning">
+            {% include 'crm/partials/renewal_table.html' with renewals=warning_renewals %}
+        </div>
+
+        <!-- Upcoming -->
+        <div class="tab-pane fade" id="upcoming">
+            {% include 'crm/partials/renewal_table.html' with renewals=upcoming_renewals %}
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Filter Renewals</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="filterForm" method="GET" action="{% url 'renewal_alerts' %}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Policy Type</label>
+                        <select class="form-select" name="policy_type">
+                            <option value="">All Types</option>
+                            {% for policy_type in policy_types %}
+                                <option value="{{ policy_type.0 }}" 
+                                    {% if applied_filters.policy_type == policy_type.0 %}selected{% endif %}>
+                                    {{ policy_type.1 }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Time Range</label>
+                        <select class="form-select" name="time_range">
+                            <option value="7" {% if applied_filters.time_range == "7" %}selected{% endif %}>Next 7 days</option>
+                            <option value="30" {% if applied_filters.time_range == "30" or not applied_filters.time_range %}selected{% endif %}>Next 30 days</option>
+                            <option value="90" {% if applied_filters.time_range == "90" %}selected{% endif %}>Next 90 days</option>
+                            <option value="365" {% if applied_filters.time_range == "365" %}selected{% endif %}>Next year</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="priority" value="{{ applied_filters.priority }}">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <button type="button" class="btn btn-outline-danger" onclick="clearFilters()">Clear Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function exportRenewals() {
+    // Get current filter parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('export', 'csv');
+    
+    // Redirect to export URL
+    window.location.href = '{% url "renewal_alerts" %}' + '?' + urlParams.toString();
+}
+
+function refreshData() {
+    location.reload();
+}
+
+function applyFilters() {
+    // This function is no longer needed as we're using form submission
+    $('#filterModal').modal('hide');
+}
+
+function clearFilters() {
+    // Redirect to the page without any filter parameters
+    window.location.href = '{% url "renewal_alerts" %}';
+}
+
+// Auto-refresh every 5 minutes
+setInterval(() => {
+    console.log('Auto-refreshing renewal data...');
+}, 300000);
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Show modal if there are filter parameters in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.toString() && !urlParams.has('export')) {
+        $('#filterModal').modal('show');
+    }
+});
+</script>
+{% endblock %}

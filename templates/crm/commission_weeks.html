@@ -1,0 +1,114 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Commission Weeks</h1>
+            <div>
+                <a href="{% url 'commission_week_create' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus fa-sm"></i> New Week
+                </a>
+                <a href="{% url 'auto_assign_applications' %}" class="btn btn-success btn-sm">
+                    <i class="fas fa-magic fa-sm"></i> Auto Assign
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter Form -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+            </div>
+            <div class="card-body">
+                <form method="get" class="form-inline">
+                    <div class="form-group mr-3 mb-2">
+                        <label for="advisor" class="mr-2">Advisor:</label>
+                        <select name="advisor" id="advisor" class="form-control form-control-sm">
+                            <option value="">All Advisors</option>
+                            {% for advisor in advisors %}
+                                <option value="{{ advisor.id }}"
+                                        {% if request.GET.advisor == advisor.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ advisor.get_full_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group mr-3 mb-2">
+                        <label for="status" class="mr-2">Status:</label>
+                        <select name="status" id="status" class="form-control form-control-sm">
+                            <option value="">All Statuses</option>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}"
+                                        {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group mr-3 mb-2">
+                        <label for="year" class="mr-2">Year:</label>
+                        <select name="year" id="year" class="form-control form-control-sm">
+                            <option value="">All Years</option>
+                            {% for year in years %}
+                                <option value="{{ year }}"
+                                        {% if request.GET.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mb-2">Apply Filters</button>
+                    <a href="{% url 'commission_weeks' %}" class="btn btn-secondary btn-sm mb-2 ml-2">Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <!-- Commission Weeks Table -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Commission Weeks</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                        <tr>
+                            <th>Week</th>
+                            <th>Advisor</th>
+                            <th>Period</th>
+                            <th>Estimated Commission</th>
+                            <th>Actual Commission</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for week in weeks %}
+                            <tr>
+                                <td>Week {{ week.week_number }} {{ week.year }}</td>
+                                <td>{{ week.advisor.get_full_name }}</td>
+                                <td>{{ week.start_date|date:"M d" }} - {{ week.end_date|date:"M d" }}</td>
+                                <td>£{{ week.total_estimated_commission|floatformat:2 }}</td>
+                                <td>£{{ week.total_actual_commission|floatformat:2 }}</td>
+                                <td>
+                                <span class="badge badge-{% if week.status == 'Paid' %}success{% elif week.status == 'Pending Review' %}warning{% elif week.status == 'Open' %}info{% else %}primary{% endif %}">
+                                    {{ week.status }}
+                                </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'commission_week_detail' week.pk %}" class="btn btn-sm btn-info">View</a>
+                                    {% if user.is_manager and week %}
+                                        <a href="{% url 'commission_week_update' week.pk %}"
+                                           class="btn btn-sm btn-warning">Edit</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No commission weeks found.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

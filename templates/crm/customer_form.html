@@ -1,0 +1,236 @@
+<!-- customer_form.html -->
+{% extends 'crm/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit Customer{% else %}Add New Customer{% endif %} - Advisor CRM{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Edit Customer{% else %}Add New Customer{% endif %}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'customer_list' %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> Back to Customers
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="customerForm">
+                    {% csrf_token %}
+                    
+                    <!-- Personal Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-person me-2"></i>Personal Information
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.first_name.label_tag }}
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="text-danger">{{ form.first_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.last_name.label_tag }}
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="text-danger">{{ form.last_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.email.label_tag }}
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.alternate_email.label_tag }}
+                            {{ form.alternate_email }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.phone.label_tag }}
+                            {{ form.phone }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.mobile.label_tag }}
+                            {{ form.mobile }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.date_of_birth.label_tag }}
+                            {{ form.date_of_birth }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.marital_status.label_tag }}
+                            {{ form.marital_status }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.dependents.label_tag }}
+                            {{ form.dependents }}
+                        </div>
+                    </div>
+                    
+                    <!-- Address Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-house me-2"></i>Address Information
+                            </h5>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            {{ form.address.label_tag }}
+                            {{ form.address }}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            {{ form.city.label_tag }}
+                            {{ form.city }}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            {{ form.state.label_tag }}
+                            {{ form.state }}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            {{ form.postal_code.label_tag }}
+                            {{ form.postal_code }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.country.label_tag }}
+                            {{ form.country }}
+                        </div>
+                    </div>
+                    
+                    <!-- Employment Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-briefcase me-2"></i>Employment Information
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.employment_status.label_tag }}
+                            {{ form.employment_status }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.employer.label_tag }}
+                            {{ form.employer }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.job_title.label_tag }}
+                            {{ form.job_title }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.annual_income.label_tag }}
+                            {{ form.annual_income }}
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3 border-bottom pb-2">
+                                <i class="bi bi-info-circle me-2"></i>Additional Information
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.lead_source.label_tag }}
+                            {{ form.lead_source }}
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            {{ form.notes.label_tag }}
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'customer_list' %}" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if form.instance.pk %}Update Customer{% else %}Create Customer{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Form validation
+    document.getElementById('customerForm').addEventListener('submit', function(e) {
+        const firstName = document.getElementById('id_first_name').value.trim();
+        const lastName = document.getElementById('id_last_name').value.trim();
+        const email = document.getElementById('id_email').value.trim();
+        
+        if (!firstName || !lastName || !email) {
+            e.preventDefault();
+            alert('Please fill in all required fields (marked with *)');
+            return false;
+        }
+        
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            e.preventDefault();
+            alert('Please enter a valid email address');
+            return false;
+        }
+    });
+    
+    // Show/hide employment fields based on employment status
+    document.getElementById('id_employment_status').addEventListener('change', function() {
+        const employmentStatus = this.value;
+        const employerField = document.getElementById('id_employer');
+        const jobTitleField = document.getElementById('id_job_title');
+        const annualIncomeField = document.getElementById('id_annual_income');
+        
+        if (employmentStatus === 'Employed' || employmentStatus === 'Self-Employed') {
+            employerField.disabled = false;
+            jobTitleField.disabled = false;
+            annualIncomeField.disabled = false;
+        } else {
+            employerField.disabled = true;
+            jobTitleField.disabled = true;
+            annualIncomeField.disabled = true;
+            employerField.value = '';
+            jobTitleField.value = '';
+            annualIncomeField.value = '';
+        }
+    });
+    
+    // Trigger change event on page load to set initial state
+    document.addEventListener('DOMContentLoaded', function() {
+        const employmentStatus = document.getElementById('id_employment_status');
+        if (employmentStatus) {
+            employmentStatus.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

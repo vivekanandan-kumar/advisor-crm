@@ -1,0 +1,235 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Dashboard - Advisor CRM{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Customers</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_customers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Active Mortgages</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ active_mortgages }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-house fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Active Insurance</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ active_insurance }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-shield-check fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Pending Applications</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ pending_applications }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-file-text fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions and Alerts -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <!-- Renewals Due -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock text-warning"></i>
+                    Renewals Due (Next 30 Days)
+                </h5>
+                <a href="{% url 'renewal_alerts' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if renewals_due %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Policy Type</th>
+                                    <th>Renewal Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for policy in renewals_due %}
+                                    <tr class="{% if policy.renewal_date <= today %}table-danger{% elif policy.renewal_date <= next_7_days %}table-warning{% endif %}">
+                                        <td>{{ policy.customer }}</td>
+                                        <td>{{ policy.policy_type }}</td>
+                                        <td>{{ policy.renewal_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'customer_detail' policy.customer.pk %}" class="btn btn-sm btn-outline-primary">Contact</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No renewals due in the next 30 days.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Commission Summary -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-currency-pound text-success"></i>
+                    Commission Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Pending:</span>
+                        <strong class="text-warning">£{{ commission_summary.total_pending|floatformat:2|default:"0.00" }}</strong>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Paid:</span>
+                        <strong class="text-success">£{{ commission_summary.total_paid|floatformat:2|default:"0.00" }}</strong>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span><strong>Total:</strong></span>
+                    <strong class="text-primary">£{{ commission_summary.total_pending|add:commission_summary.total_paid|floatformat:2|default:"0.00" }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning-fill text-primary"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'customer_create' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-person-plus"></i> Add Customer
+                    </a>
+                    <a href="{% url 'application_create' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-file-plus"></i> New Application
+                    </a>
+                    <a href="{% url 'mortgage_create' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-house-add"></i> Add Mortgage
+                    </a>
+                    <a href="{% url 'insurance_create' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-shield-plus"></i> Add Insurance
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Follow-ups and Recent Communications -->
+<div class="row">
+    <div class="col-lg-6">
+        <!-- Follow-ups Due -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-check text-info"></i>
+                    Follow-ups Due
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if followups_due %}
+                    {% for application in followups_due %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                            <div>
+                                <strong>{{ application.customer }}</strong>
+                                <br><small class="text-muted">{{ application.application_type }} - {{ application.follow_up_date|date:"M d, Y" }}</small>
+                            </div>
+                            <a href="{% url 'application_detail' application.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">No follow-ups due.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <!-- Recent Communications -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-dots text-secondary"></i>
+                    Recent Communications
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_communications %}
+                    {% for comm in recent_communications %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                            <div>
+                                <strong>{{ comm.customer }}</strong> - {{ comm.communication_type }}
+                                <br><small class="text-muted">{{ comm.communication_date|date:"M d, Y g:i A" }}</small>
+                            </div>
+                            <span class="badge bg-{% if comm.direction == 'Inbound' %}info{% else %}secondary{% endif %}">
+                                {{ comm.direction }}
+                            </span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">No recent communications.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,294 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Applications - Advisor CRM{% endblock %}
+{% block page_title %}Applications{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'application_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle"></i> Add Application
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="mb-0">Application List</h5>
+                    </div>
+                    <div class="col-auto">
+                        <form method="get" class="d-flex">
+                            <div class="input-group" style="min-width: 300px;">
+                                <input type="text" name="search" class="form-control form-control-sm"
+                                    placeholder="Search by app #, customer, email, or postal code..."
+                                    value="{{ request.GET.search }}" aria-label="Search applications"
+                                    style="font-size: 0.875rem; min-width: 400px;">
+                                <button type="submit" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                                {% if request.GET.search %}
+                                <a href="{% url 'application_list' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-x"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top pagination for better navigation -->
+            {% if is_paginated %}
+            <div class="card-header py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }} applications
+                    </small>
+                    <nav aria-label="Application pagination">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Add this below the card-header or in the card-body -->
+            {% if request.GET.search %}
+            <div class="alert alert-info mb-0">
+                <small>
+                    <i class="bi bi-info-circle"></i>
+                    Showing results for: <strong>"{{ request.GET.search }}"</strong>
+                    {% with applications.count as result_count %}
+                    - Found {{ result_count }} application{{ result_count|pluralize }}
+                    {% endwith %}
+                </small>
+            </div>
+            {% endif %}
+            
+            <div class="card-body p-0">
+                {% if applications %}
+                <div class="table-container" style="max-height: 65vh; overflow: auto;">
+                    <table class="table table-hover mb-0 sticky-header">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Application #</th>
+                                <th>Customer</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Submitted</th>
+                                <th>Postal Code</th>
+                                <th>Advisor</th>
+                                <th class="action-column">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for application in applications %}
+                            <tr>
+                                <td>
+                                    <strong>{{ application.application_number }}</strong>
+                                </td>
+                                <td>
+                                    {{ application.customer.first_name }} {{ application.customer.last_name }}<br>
+                                    <small class="text-muted">{{ application.customer.email }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ application.application_type }}</span>
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge bg-{% if application.application_status == 'Approved' %}success{% elif application.application_status == 'Declined' %}danger{% elif application.application_status == 'Completed' %}success{% else %}warning{% endif %}">
+                                        {{ application.application_status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge bg-{% if application.application_priority == 'High' %}danger{% elif application.application_priority == 'Medium' %}warning{% else %}info{% endif %}">
+                                        {{ application.application_priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if application.submitted_date %}
+                                    {{ application.submitted_date|date:"M d, Y" }}
+                                    {% else %}
+                                    <span class="text-muted">Not submitted</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if application.mortgage and application.mortgage.property_postal_code %}
+                                    {{ application.mortgage.property_postal_code }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if application.advisor %}
+                                    {{ application.advisor.get_full_name|default:application.advisor.username }}
+                                    {% else %}
+                                    <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td class="action-column">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'application_detail' application.pk %}"
+                                            class="btn btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'application_update' application.pk %}"
+                                            class="btn btn-outline-secondary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination at bottom -->
+                {% if is_paginated %}
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }} applications
+                        </small>
+                        <nav aria-label="Application pagination">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                        href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                        href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center p-5">
+                    <i class="bi bi-file-text display-1 text-muted"></i>
+                    <p class="text-muted mt-3">No applications found.</p>
+                    <a href="{% url 'application_create' %}" class="btn btn-primary">Add Your First Application</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    /* Container for table with fixed header and horizontal scroll */
+    .table-container {
+        position: relative;
+        overflow: auto;
+    }
+    
+    /* Make the header sticky */
+    .sticky-header thead th {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 10;
+        box-shadow: inset 0 -1px 0 #dee2e6;
+    }
+    
+    /* Ensure action column has fixed width */
+    .action-column {
+        width: 120px;
+        min-width: 120px;
+    }
+    
+    /* Style for horizontal scrollbar to make it more visible */
+    .table-container::-webkit-scrollbar {
+        height: 12px;
+    }
+    
+    .table-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .table-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    .table-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="search"]');
+    const searchForm = document.querySelector('form[method="get"]');
+
+    if (searchInput && searchForm) {
+        let searchTimeout;
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchForm.submit();
+            }, 500); // Submit after 500ms of inactivity
+        });
+    }
+    
+    // Make horizontal scroll more obvious by adding a shadow when scrolled
+    const tableContainer = document.querySelector('.table-container');
+    if (tableContainer) {
+        tableContainer.addEventListener('scroll', function() {
+            if (this.scrollLeft > 0) {
+                this.style.boxShadow = 'inset 5px 0 5px -5px rgba(0,0,0,0.1)';
+            } else {
+                this.style.boxShadow = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

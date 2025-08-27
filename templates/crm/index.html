@@ -1,0 +1,233 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Pinnacle Financial Solutions LTD{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center py-5">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">Your Journey to Financial Freedom Starts Here</h1>
+                    <p class="lead mb-4">Pinnacle Financial Solutions provides expert mortgage and insurance advice to help you make the right financial decisions for your future.</p>
+                    <div class="d-flex gap-2">
+                        <a href="#services" class="btn btn-light btn-lg">Our Services</a>
+                        <a href="#contact" class="btn btn-outline-light btn-lg">Contact Us</a>
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <div class="bg-light rounded-3 p-3">
+                        <i class="bi bi-graph-up-arrow display-1 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">Our Services</h2>
+                <p class="text-muted">Comprehensive financial solutions tailored to your needs</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-primary text-white">
+                                <i class="bi bi-house"></i>
+                            </div>
+                            <h4 class="card-title">Mortgage Advice</h4>
+                            <p class="card-text">Expert guidance on residential, buy-to-let, and commercial mortgages with access to the whole market.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-success text-white">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h4 class="card-title">Insurance Protection</h4>
+                            <p class="card-text">Life, critical illness, income protection and home insurance to safeguard your financial future.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-info text-white">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <h4 class="card-title">Financial Planning</h4>
+                            <p class="card-text">Retirement planning, investment advice, and wealth management strategies for long-term security.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-5 bg-light">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <div class="bg-light rounded-3 p-3 text-center">
+                        <i class="bi bi-building display-1 text-primary"></i>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h2 class="fw-bold mb-4">About Pinnacle Financial Solutions</h2>
+                    <p class="lead">With over 15 years of experience in the financial services industry, we've helped thousands of clients achieve their financial goals.</p>
+                    <p>Our team of qualified advisors takes pride in providing personalized, transparent advice that puts your interests first. We believe in building long-term relationships based on trust and results.</p>
+                    <div class="d-flex mt-4">
+                        <div class="me-4">
+                            <h3 class="text-primary fw-bold">500+</h3>
+                            <p>Happy Clients</p>
+                        </div>
+                        <div class="me-4">
+                            <h3 class="text-primary fw-bold">£150M+</h3>
+                            <p>Mortgages Arranged</p>
+                        </div>
+                        <div>
+                            <h3 class="text-primary fw-bold">15+</h3>
+                            <p>Years Experience</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">What Our Clients Say</h2>
+                <p class="text-muted">Don't just take our word for it</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary rounded-circle me-3" style="width: 50px; height: 50px;"></div>
+                                <div>
+                                    <h5 class="mb-0">Sarah Johnson</h5>
+                                    <small class="text-muted">First-time Buyer</small>
+                                </div>
+                            </div>
+                            <p class="mb-0">"Pinnacle made the mortgage process so simple. They found me a great deal and explained everything clearly. I couldn't be happier with their service!"</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary rounded-circle me-3" style="width: 50px; height: 50px;"></div>
+                                <div>
+                                    <h5 class="mb-0">Michael Thompson</h5>
+                                    <small class="text-muted">Property Investor</small>
+                                </div>
+                            </div>
+                            <p class="mb-0">"As a property investor, I need a broker who understands the market. Pinnacle has consistently secured the best deals for my portfolio."</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary rounded-circle me-3" style="width: 50px; height: 50px;"></div>
+                                <div>
+                                    <h5 class="mb-0">Emma and David Wilson</h5>
+                                    <small class="text-muted">Family Protection</small>
+                                </div>
+                            </div>
+                            <p class="mb-0">"The peace of mind we have after speaking with Pinnacle is priceless. They helped us protect our family's future with the right insurance policies."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">Get In Touch</h2>
+                <p class="text-muted">Ready to take the next step? Contact us today</p>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h4 class="card-title mb-4">Contact Information</h4>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-geo-alt text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Address</h6>
+                                    <p class="mb-0 text-muted">123 Financial District, London, EC1A 1AA</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-telephone text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Phone</h6>
+                                    <p class="mb-0 text-muted">+44 (0)20 1234 5678</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-envelope text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Email</h6>
+                                    <p class="mb-0 text-muted">info@pinnaclefinancials.co.uk</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h4 class="card-title mb-4">Send Us a Message</h4>
+                            <form>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="name" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="name" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="subject" class="form-label">Subject</label>
+                                    <input type="text" class="form-control" id="subject" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="message" class="form-label">Message</label>
+                                    <textarea class="form-control" id="message" rows="4" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Send Message</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

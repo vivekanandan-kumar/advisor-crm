@@ -1,0 +1,267 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Insurance Policy {{ insurance.policy_number }} - Advisor CRM{% endblock %}
+{% block page_title %}Insurance Policy Details{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'insurance_list' %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> Back to Insurance Policies
+</a>
+<a href="{% url 'insurance_update' insurance.pk %}" class="btn btn-outline-primary">
+    <i class="bi bi-pencil"></i> Edit Policy
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Policy Information Card -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-shield me-2"></i>Policy Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Policy Number:</strong><br>
+                        {{ insurance.policy_number|default:"Pending" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Policy Type:</strong><br>
+                        {{ insurance.policy_type }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Insurance Company:</strong><br>
+                        {{ insurance.insurance_company }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Status:</strong><br>
+                        <span class="badge bg-{% if insurance.policy_status == 'Active' %}success{% elif insurance.policy_status == 'Renewed' %}success{% elif insurance.policy_status == 'Quote' %}warning{% else %}secondary{% endif %}">
+                            {{ insurance.policy_status }}
+                        </span>
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Underwriting Class:</strong><br>
+                        {{ insurance.underwriting_class|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Automatic Renewal:</strong><br>
+                        {% if insurance.automatic_renewal %}
+                            <span class="badge bg-success">Yes</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Information Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person me-2"></i>Customer Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Customer:</strong><br>
+                        {{ insurance.customer.first_name }} {{ insurance.customer.last_name }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Email:</strong><br>
+                        {{ insurance.customer.email }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Phone:</strong><br>
+                        {{ insurance.customer.phone|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Advisor:</strong><br>
+                        {{ insurance.advisor.get_full_name|default:insurance.advisor.username }}
+                    </div>
+                    {% if insurance.beneficiary %}
+                    <div class="col-12 mb-2">
+                        <strong>Beneficiary:</strong><br>
+                        {{ insurance.beneficiary }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Information Card -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-currency-pound me-2"></i>Financial Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Coverage Amount:</strong><br>
+                        £{{ insurance.coverage_amount|floatformat:2 }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Premium Amount:</strong><br>
+                        £{{ insurance.premium_amount|floatformat:2 }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Premium Frequency:</strong><br>
+                        {{ insurance.premium_frequency }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Commission Rate:</strong><br>
+                        {{ insurance.commission_rate|floatformat:2 }}%
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Commission Amount:</strong><br>
+                        £{{ insurance.commission_amount|floatformat:2|default:"-" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Policy Dates Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-calendar me-2"></i>Policy Dates
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Start Date:</strong><br>
+                        {{ insurance.policy_start_date|date:"M d, Y" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>End Date:</strong><br>
+                        {{ insurance.policy_end_date|date:"M d, Y"|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Renewal Date:</strong><br>
+                        {{ insurance.renewal_date|date:"M d, Y"|default:"-" }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Next Review:</strong><br>
+                        {{ insurance.next_review_date|date:"M d, Y"|default:"-" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-journal-text me-2"></i>Notes
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if insurance.notes %}
+                    {{ insurance.notes|linebreaks }}
+                {% else %}
+                    <p class="text-muted">No notes available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="mb-1">Policy Created</h6>
+                                <small class="text-muted">{{ insurance.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="mb-1">Policy Started</h6>
+                                <small class="text-muted">{{ insurance.policy_start_date|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if insurance.policy_end_date %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="mb-1">Policy Ended</h6>
+                                <small class="text-muted">{{ insurance.policy_end_date|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="mb-1">Last Updated</h6>
+                                <small class="text-muted">{{ insurance.updated_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -2rem;
+        top: 0.5rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #0d6efd;
+    }
+    .timeline-content {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+        border-left: 3px solid #0d6efd;
+    }
+</style>
+{% endblock %}
+{% endblock %}
