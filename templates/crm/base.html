@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advisor CRM - Dashboard</title>
 
     <!-- Bootstrap 5.3.2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
     <!-- Bootstrap Icons 1.11.2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
 
     <!-- jQuery 3.7.1 -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 
     <style>
         :root {
@@ -27,6 +30,16 @@
             --gradient-primary: linear-gradient(135deg, #1e40af 0%, #059669 100%);
             --gradient-secondary: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
             --gradient-light: linear-gradient(135deg, #dbeafe 0%, #d1fae5 100%);
+            --surface: #f8fafc;
+            --on-surface: #1e293b;
+            --card-bg: #ffffff;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body {
+            background-color: var(--surface);
+            color: var(--on-surface);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         .sidebar {
@@ -60,6 +73,7 @@
         .main-content {
             min-height: 100vh;
             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding-top: 1.5rem;
         }
 
         .public-content {
@@ -70,9 +84,10 @@
         .card {
             border: none;
             border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--card-shadow);
             transition: all 0.3s ease;
-            background: white;
+            background: var(--card-bg);
+            margin-bottom: 1.5rem;
         }
 
         .card:hover {
@@ -189,6 +204,7 @@
             border: none;
             border-radius: 12px;
             padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .alert-success {
@@ -368,7 +384,7 @@
 
         .page-header-content {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
@@ -495,7 +511,7 @@
         }
 
         /* Keep parent link highlighted when child is active */
-        .nav-dropdown-menu .nav-link.active ~ .nav-dropdown-toggle {
+        .nav-dropdown-menu .nav-link.active~.nav-dropdown-toggle {
             color: white;
             background: rgba(255, 255, 255, .15);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -563,6 +579,118 @@
             font-size: 1.5rem;
         }
 
+        /* NEW STYLES FOR IMPROVED DESIGN */
+
+        /* Improved spacing */
+        .content-container {
+            padding: 0 1rem;
+        }
+
+        /* Enhanced card design */
+        .enhanced-card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .enhanced-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .enhanced-card .card-header {
+            background: var(--gradient-light);
+            border-bottom: 1px solid rgba(30, 64, 175, 0.1);
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-blue);
+        }
+
+        .enhanced-card .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Improved typography */
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 700;
+            color: var(--dark-blue);
+        }
+
+        /* Better spacing for main content */
+        .main-content-container {
+            padding-bottom: 2rem;
+        }
+
+        /* Improved table design */
+        .enhanced-table {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        .enhanced-table thead th {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .enhanced-table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-color: #e5e7eb;
+        }
+
+        .enhanced-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Improved form controls */
+        .form-label {
+            font-weight: 600;
+            color: var(--dark-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modern button styles */
+        .btn-modern {
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        /* User welcome section improvement */
+        .user-welcome {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(30, 64, 175, 0.05);
+            border-radius: 12px;
+            margin-right: 1rem;
+        }
+
+        .user-avatar-small {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
         @media (max-width: 768px) {
             .page-header-content {
                 flex-direction: column;
@@ -584,6 +712,70 @@
 
             .right-panel {
                 width: 100%;
+            }
+
+            .user-welcome {
+                display: none;
+            }
+        }
+
+        .page-actions .d-flex {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .page-actions .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        /* Better mobile responsiveness */
+        @media (max-width: 768px) {
+            .page-actions .d-flex {
+                justify-content: center;
+            }
+
+            .page-actions .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            .page-title-main {
+                text-align: center;
+                margin-bottom: 1rem !important;
+            }
+
+            .main-content {
+                padding-top: 1rem;
+            }
+
+            .page-header-section {
+                padding: 1rem;
+            }
+        }
+
+        .page-specific-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-specific-actions .btn {
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .page-specific-actions {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .page-specific-actions .btn {
+                margin-bottom: 0.25rem;
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
             }
         }
     </style>
@@ -611,45 +803,55 @@
 
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                                href="{% url 'dashboard' %}">
                                 <i class="bi bi-speedometer2 me-2"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'customer_list' %}active{% endif %}" href="{% url 'customer_list' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'customer_list' %}active{% endif %}"
+                                href="{% url 'customer_list' %}">
                                 <i class="bi bi-people me-2"></i>Customers
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'application' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'application_list' %}">
+                            <a class="nav-link {% if 'application' in request.resolver_match.url_name %}active{% endif %}"
+                                href="{% url 'application_list' %}">
                                 <i class="bi bi-file-text me-2"></i>Applications
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'mortgage' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'mortgage_list' %}">
+                            <a class="nav-link {% if 'mortgage' in request.resolver_match.url_name %}active{% endif %}"
+                                href="{% url 'mortgage_list' %}">
                                 <i class="bi bi-house me-2"></i>Mortgages
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'insurance' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'insurance_list' %}">
+                            <a class="nav-link {% if 'insurance' in request.resolver_match.url_name %}active{% endif %}"
+                                href="{% url 'insurance_list' %}">
                                 <i class="bi bi-shield-check me-2"></i>Insurance
                             </a>
                         </li>
 
                         <!-- Commission Dropdown Menu -->
                         <li class="nav-item nav-dropdown">
-                            <a class="nav-link nav-dropdown-toggle {% if 'commission' in request.resolver_match.url_name %}active{% endif %}" data-bs-toggle="collapse" href="#commissionDropdown" role="button" aria-expanded="false"
+                            <a class="nav-link nav-dropdown-toggle {% if 'commission' in request.resolver_match.url_name %}active{% endif %}"
+                                data-bs-toggle="collapse" href="#commissionDropdown" role="button" aria-expanded="false"
                                 aria-controls="commissionDropdown">
                                 <i class="bi bi-cash-coin me-2"></i>Commissions
                             </a>
-                            <div class="collapse nav-dropdown-menu {% if 'commission' in request.resolver_match.url_name %}show{% endif %}" id="commissionDropdown">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'commission_weeks' %}active{% endif %}" href="{% url 'commission_weeks' %}">
+                            <div class="collapse nav-dropdown-menu {% if 'commission' in request.resolver_match.url_name %}show{% endif %}"
+                                id="commissionDropdown">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'commission_weeks' %}active{% endif %}"
+                                    href="{% url 'commission_weeks' %}">
                                     <i class="bi bi-calendar-week me-2"></i>Commission Weeks
                                 </a>
-                                <a class="nav-link {% if request.resolver_match.url_name == 'weekly_commission_report' %}active{% endif %}" href="{% url 'weekly_commission_report' %}">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'weekly_commission_report' %}active{% endif %}"
+                                    href="{% url 'weekly_commission_report' %}">
                                     <i class="bi bi-graph-up me-2"></i>Commission Report
                                 </a>
-                                <a class="nav-link {% if request.resolver_match.url_name == 'auto_assign_applications' %}active{% endif %}" href="{% url 'auto_assign_applications' %}">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'auto_assign_applications' %}active{% endif %}"
+                                    href="{% url 'auto_assign_applications' %}">
                                     <i class="bi bi-magic me-2"></i>Auto Assign
                                 </a>
                             </div>
@@ -657,33 +859,40 @@
 
                         <!-- Payments Dropdown Menu -->
                         <li class="nav-item nav-dropdown">
-                            <a class="nav-link nav-dropdown-toggle {% if 'payment' in request.resolver_match.url_name %}active{% endif %}" data-bs-toggle="collapse" href="#paymentDropdown" role="button" aria-expanded="false"
+                            <a class="nav-link nav-dropdown-toggle {% if 'payment' in request.resolver_match.url_name %}active{% endif %}"
+                                data-bs-toggle="collapse" href="#paymentDropdown" role="button" aria-expanded="false"
                                 aria-controls="paymentDropdown">
                                 <i class="bi bi-credit-card me-2"></i>Payments
                             </a>
-                            <div class="collapse nav-dropdown-menu {% if 'payment' in request.resolver_match.url_name %}show{% endif %}" id="paymentDropdown">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'payment_list' %}active{% endif %}" href="{% url 'payment_list' %}">
+                            <div class="collapse nav-dropdown-menu {% if 'payment' in request.resolver_match.url_name %}show{% endif %}"
+                                id="paymentDropdown">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'payment_list' %}active{% endif %}"
+                                    href="{% url 'payment_list' %}">
                                     <i class="bi bi-list-check me-2"></i>All Payments
                                 </a>
-                                <a class="nav-link {% if request.resolver_match.url_name == 'payment_create' %}active{% endif %}" href="{% url 'payment_create' %}">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'payment_create' %}active{% endif %}"
+                                    href="{% url 'payment_create' %}">
                                     <i class="bi bi-plus-circle me-2"></i>New Payment
                                 </a>
                             </div>
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'renewal_alerts' %}active{% endif %}" href="{% url 'renewal_alerts' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'renewal_alerts' %}active{% endif %}"
+                                href="{% url 'renewal_alerts' %}">
                                 <i class="bi bi-clock me-2"></i>Renewals
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}" href="{% url 'reports' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}"
+                                href="{% url 'reports' %}">
                                 <i class="bi bi-graph-up me-2"></i>Reports
                             </a>
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link {% if 'advisor' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'advisor_list' %}">
+                            <a class="nav-link {% if 'advisor' in request.resolver_match.url_name %}active{% endif %}"
+                                href="{% url 'advisor_list' %}">
                                 <i class="bi bi-person-badge me-2"></i>Advisors
                             </a>
                         </li>
@@ -703,69 +912,89 @@
 
             <!-- Main content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
-                <!-- Enhanced Page Header Section -->
-                <div class="page-header-section">
-                    <!-- Breadcrumb -->
-                    <div class="breadcrumb-section">
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-                                {% block breadcrumb %}{% endblock %}
-                            </ol>
-                        </nav>
-                    </div>
+                <div class="main-content-container">
+                    <!-- Enhanced Page Header Section -->
+                    <div class="page-header-section">
+                        <!-- Breadcrumb -->
+                        <div class="breadcrumb-section">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                                    {% block breadcrumb %}{% endblock %}
+                                </ol>
+                            </nav>
+                        </div>
 
-                    <!-- Page Header Content -->
-                    <div class="page-header-content">
-                        <h1 class="page-title-main">{% block page_title %}Dashboard{% endblock %}</h1>
+                        <!-- Page Header Content -->
+                        <div class="page-header-content">
+                            <div
+                                class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center w-100">
+                                <h1 class="page-title-main mb-2 mb-md-0">{% block page_title %}Dashboard{% endblock %}
+                                </h1>
 
-                        <!-- Page Actions -->
-                        <div class="page-actions">
-                            <div class="d-flex align-items-center gap-3">
-                                <span class="text-muted small">Welcome, {{ user.get_full_name|default:user.username }}</span>
-                                <a href="{% url 'application_create' %}" class="btn btn-outline-primary btn-sm btn-action">
-                                    <i class="bi bi-plus-circle me-1"></i>New Application
-                                </a>
-                                <a href="{% url 'customer_create' %}" class="btn btn-outline-secondary btn-sm btn-action">
-                                    <i class="bi bi-person-plus me-1"></i>Add Customer
-                                </a>
-                                <form method="post" action="{% url 'logout' %}" class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-outline-danger btn-sm btn-action">
-                                        <i class="bi bi-box-arrow-right me-1"></i>Logout
-                                    </button>
-                                </form>
+                                <div
+                                    class="d-flex flex-column flex-md-row gap-2 align-items-start align-items-md-center">
+                                    <!-- Page-specific actions - support both block names -->
+                                    <div class="page-specific-actions">
+                                        {% block page_specific_actions %}{% endblock %}
+                                        {% block page_actions %}{% endblock %}
+                                    </div>
+
+                                    <!-- User info and logout -->
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="user-welcome d-none d-md-flex">
+                                            <div class="user-avatar-small">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+                                            <div>
+                                                <div class="small text-muted">Welcome,</div>
+                                                <div class="fw-medium">{{ user.get_full_name|default:user.username }}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger btn-sm btn-action">
+                                                <i class="bi bi-box-arrow-right me-1"></i>Logout
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Messages -->
-                {% if messages %}
+                    <!-- Messages -->
+                    {% if messages %}
                     {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            <i class="bi bi-{% if message.tags == 'success' %}check-circle-fill{% elif message.tags == 'warning' %}exclamation-triangle-fill{% elif message.tags == 'error' %}x-circle-fill{% else %}info-circle-fill{% endif %} me-2"></i>
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i
+                            class="bi bi-{% if message.tags == 'success' %}check-circle-fill{% elif message.tags == 'warning' %}exclamation-triangle-fill{% elif message.tags == 'error' %}x-circle-fill{% else %}info-circle-fill{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
                     {% endfor %}
-                {% endif %}
+                    {% endif %}
 
-                {% block content %}
-                <!-- Content will be overridden by child templates -->
-                {% endblock %}
+                    {% block content %}
+                    <!-- Content will be overridden by child templates -->
+                    {% endblock %}
+                </div>
             </main>
         </div>
     </div>
 
     <!-- Bootstrap 5.3.2 JS Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Enhanced dropdown functionality
             document.querySelectorAll('.nav-dropdown-menu .nav-link.active').forEach(activeLink => {
                 const dropdown = activeLink.closest('.nav-dropdown-menu');
@@ -783,7 +1012,7 @@
 
             // Close other dropdowns when one is opened
             document.querySelectorAll('.nav-dropdown-toggle').forEach(toggle => {
-                toggle.addEventListener('click', function(e) {
+                toggle.addEventListener('click', function (e) {
                     const targetId = this.getAttribute('href');
                     const isExpanding = this.getAttribute('aria-expanded') === 'false';
 
@@ -806,4 +1035,5 @@
 
     {% block extra_scripts %}{% endblock %}
 </body>
+
 </html>

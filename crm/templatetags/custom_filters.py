@@ -51,3 +51,11 @@ def subtract(value, arg):
         return value - arg
     except (TypeError, ValueError):
         return value
+    
+@register.filter
+def multiply(value, arg):
+    """Multiply the value by the argument"""
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return 0    

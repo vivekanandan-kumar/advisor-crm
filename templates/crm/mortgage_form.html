@@ -3,7 +3,7 @@
 {% block title %}{% if form.instance.pk %}Edit Mortgage{% else %}Add New Mortgage{% endif %} - Advisor CRM{% endblock %}
 {% block page_title %}{% if form.instance.pk %}Edit Mortgage{% else %}Add New Mortgage{% endif %}{% endblock %}
 
-{% block page_actions %}
+{% block page_specific_actions %}
 <a href="{% url 'mortgage_list' %}" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> Back to Mortgages
 </a>

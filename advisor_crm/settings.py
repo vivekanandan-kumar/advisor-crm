@@ -82,13 +82,13 @@ WSGI_APPLICATION = "advisor_crm.wsgi.application"
 
 DATABASES = {
     'default': {
-        # 'ENGINE': 'mysql.connector.django',  # for mysql-connector'
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'pinacle_crm',
+        #'ENGINE': 'mysql.connector.django',  # for mysql-connector' in fedora
+        'ENGINE': 'django.db.backends.mysql', 
+        'NAME': 'advisor_db',
         'USER': 'p_root',
         'PASSWORD': 'password',
-        #'HOST': 'localhost',
-        'HOST': '192.168.1.13',
+        'HOST': 'localhost', # in fedora
+        #'HOST': '192.168.1.13', #mac os
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",

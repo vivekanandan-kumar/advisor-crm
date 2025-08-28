@@ -3,7 +3,7 @@
 {% block title %}{{ customer.first_name }} {{ customer.last_name }} - Advisor CRM{% endblock %}
 {% block page_title %}Customer Details: {{ customer.first_name }} {{ customer.last_name }}{% endblock %}
 
-{% block page_actions %}
+{% block page_specific_actions %}
 <a href="{% url 'customer_list' %}" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> Back to Customers
 </a>

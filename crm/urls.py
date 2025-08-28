@@ -3,7 +3,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from . import views
-from .views import AdvisorDeleteView , ApplicationUpdateView
+from .views import AdvisorDeleteView , ApplicationUpdateView, CommissionWeeksListView,commission_week_detail,AddApplicationToWeekView,submit_week_for_approval,WeeklyCommissionReportView,UpdateCommissionMappingView
+
 
 urlpatterns = [
  
@@ -71,6 +72,12 @@ urlpatterns = [
     path('commission/week/<int:pk>/update/', views.commission_week_update, name='commission_week_update'),
     path('commission/week/report/', views.weekly_commission_report, name='weekly_commission_report'),
     path('commission/auto-assign/', views.auto_assign_applications, name='auto_assign_applications'),
+    path('commission/week/<int:week_id>/submit/', views.submit_week_for_approval, name='submit_week_for_approval'),
+    path('commission-weeks/', CommissionWeeksListView.as_view(), name='commission_weeks'),
+    path('commission-week/<int:pk>/add-applications/', AddApplicationToWeekView.as_view(), name='add_application_to_week'),
+    path('commission-week/<int:pk>/submit/', submit_week_for_approval, name='submit_week_for_approval'),
+    path('commission-mapping/<int:pk>/update/', UpdateCommissionMappingView.as_view(), name='update_commission_mapping'),
+    path('commission-report/', WeeklyCommissionReportView.as_view(), name='weekly_commission_report'),
 
     # Payment URLs
     path('payments/', views.payment_list, name='payment_list'),

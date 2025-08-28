@@ -4,7 +4,7 @@
 {% block title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Advisor{% endblock %}
 {% block page_title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Advisor{% endblock %}
 
-{% block page_actions %}
+{% block page_specific_actions %}
 <a href="{% url 'advisor_list' %}" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> Back to Advisors
 </a>

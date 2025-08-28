@@ -2,9 +2,11 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.forms.widgets import DateInput, Select, Textarea
+from datetime import date
+import datetime
 from .models import (
     Customer, Mortgage, InsurancePolicy, Application, 
-    Communication, Document, Commission, Advisor,Payment,CommissionWeek,CommissionApplicationMapping
+    Communication, Document, Commission, Advisor,Payment,CommissionWeek,CommissionApplicationMapping,CommissionMapping
 )
 
 # forms.py
@@ -325,19 +327,39 @@ class PaymentForm(forms.ModelForm):
 class CommissionWeekForm(forms.ModelForm):
     class Meta:
         model = CommissionWeek
-        exclude = ['week_id', 'created_at', 'updated_at']
-        widgets = {
-            'advisor': Select(attrs={'class': 'form-control'}),
-            'week_number': forms.NumberInput(attrs={'class': 'form-control'}),
-            'year': forms.NumberInput(attrs={'class': 'form-control'}),
-            'start_date': DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'end_date': DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'total_estimated_commission': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'total_actual_commission': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'status': Select(attrs={'class': 'form-control'}),
-            'notes': Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
-
+        fields = ['week_number', 'year', 'start_date', 'end_date', 'advisor', 'status', 'notes']
+    
+    def clean_week_number(self):
+        week_number = self.cleaned_data['week_number']
+        if week_number < 1 or week_number > 53:
+            raise forms.ValidationError('Week number must be between 1 and 53')
+        return week_number
+    
+    def clean_year(self):
+        year = self.cleaned_data['year']
+        current_year = date.today().year
+        if year < current_year:
+            raise forms.ValidationError('Cannot create commission weeks for past years')
+        return year
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        week_number = cleaned_data.get('week_number')
+        year = cleaned_data.get('year')
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        if week_number and year and start_date and end_date:
+            # Validate that dates match the week number
+            expected_start = date.fromisocalendar(year, week_number, 1)
+            expected_end = date.fromisocalendar(year, week_number, 7)
+            
+            if start_date != expected_start:
+                self.add_error('start_date', f'Start date should be {expected_start} for week {week_number}')
+            if end_date != expected_end:
+                self.add_error('end_date', f'End date should be {expected_end} for week {week_number}')
+        
+        return cleaned_data
 
 class CommissionApplicationMappingForm(forms.ModelForm):
     class Meta:
@@ -351,3 +373,12 @@ class CommissionApplicationMappingForm(forms.ModelForm):
             'commission_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'notes': Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+
+class CommissionMappingForm(forms.ModelForm):
+    class Meta:
+        model = CommissionMapping
+        fields = ['commission_rate', 'estimated_commission', 'actual_commission', 'notes']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        

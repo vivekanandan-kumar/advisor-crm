@@ -11,8 +11,8 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.urls import reverse_lazy
-from django.contrib.auth import get_user_model  # Add this import
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib.auth import get_user_model  
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView,TemplateView
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from decimal import Decimal
@@ -23,16 +23,17 @@ from django.db.models import Q, Count, Sum, Avg
 from django.db.models.functions import TruncMonth, TruncYear
 from collections import defaultdict
 import calendar
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
+import datetime
 
 
 from .models import (
     Customer, Mortgage, InsurancePolicy, Application,
-    Document, Communication, Commission, Payment, CommissionWeek, CommissionApplicationMapping
+    Document, Communication, Commission, Payment, CommissionWeek, CommissionApplicationMapping,CommissionWeek, CommissionMapping, Application
 )
 from .forms import (
     CustomerForm, MortgageForm, InsurancePolicyForm,
-    ApplicationForm, CommunicationForm, AdvisorForm
+    ApplicationForm, CommunicationForm, AdvisorForm, CommissionMappingForm
 )
 
 # Get the custom user model
@@ -1542,26 +1543,67 @@ def commission_week_detail(request, pk):
     }
     return render(request, 'crm/commission_week_detail.html', context)
 
-
 @login_required
 def commission_week_create(request):
-    """Create a new commission week"""
+    """Create a new commission week with proper week number validation"""
     if request.method == 'POST':
         form = CommissionWeekForm(request.POST)
         if form.is_valid():
-            week = form.save()
-            messages.success(request, 'Commission week created successfully!')
-            return redirect('commission_week_detail', pk=week.pk)
+            # Validate week number is current or future week
+            today = date.today()
+            year = today.year
+            week_number = today.isocalendar()[1]
+            
+            submitted_week = form.cleaned_data['week_number']
+            submitted_year = form.cleaned_data['year']
+            
+            # Validate week number is valid (1-52/53)
+            if submitted_week < 1 or submitted_week > 53:
+                form.add_error('week_number', 'Week number must be between 1 and 53')
+            # Validate year is current or future
+            elif submitted_year < year:
+                form.add_error('year', 'Cannot create commission weeks for past years')
+            # Validate week is current or future for current year
+            elif submitted_year == year and submitted_week < week_number:
+                form.add_error('week_number', 'Cannot create commission weeks for past weeks')
+                
+            if not form.errors:
+                week = form.save()
+                messages.success(request, 'Commission week created successfully!')
+                return redirect('commission_week_detail', pk=week.pk)
     else:
-        form = CommissionWeekForm()
+        # Set default values to current week
+        today = date.today()
+        year = today.year
+        week_number = today.isocalendar()[1]
+        
+        # Calculate start and end dates for the week
+        start_date = today - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=6)
+        
+        form = CommissionWeekForm(initial={
+            'week_number': week_number,
+            'year': year,
+            'start_date': start_date,
+            'end_date': end_date,
+            'advisor': request.user
+        })
 
     return render(request, 'crm/commission_week_form.html', {'form': form})
 
-
 @login_required
 def assign_application_to_week(request, application_id):
-    """Assign application to a commission week"""
+    """Assign application to a commission week with validation"""
     application = get_object_or_404(Application, pk=application_id)
+    
+    # Validate application is eligible (insurance with Active/Underwriter status)
+    if application.application_type == 'Insurance' and application.insurance:
+        if application.insurance.policy_status not in ['Active', 'Underwriter']:
+            messages.error(request, 'Only insurance applications with status "Active" or "Underwriter" can be assigned to commission weeks.')
+            return redirect('application_detail', pk=application_id)
+    else:
+        messages.error(request, 'Only insurance applications can be assigned to commission weeks.')
+        return redirect('application_detail', pk=application_id)
 
     # Check if application is already mapped
     existing_mapping = CommissionApplicationMapping.objects.filter(application=application).first()
@@ -1575,11 +1617,8 @@ def assign_application_to_week(request, application_id):
             mapping = form.save(commit=False)
             mapping.application = application
 
-            # Calculate estimated commission based on application type
-            if application.application_type == 'Mortgage' and application.mortgage:
-                mapping.estimated_commission = application.mortgage.loan_amount * Decimal('0.005')  # 0.5% example
-                mapping.commission_rate = Decimal('0.5')
-            elif application.application_type == 'Insurance' and application.insurance:
+            # Calculate estimated commission for insurance
+            if application.insurance:
                 mapping.estimated_commission = application.insurance.premium_amount * Decimal('0.2')  # 20% example
                 mapping.commission_rate = Decimal('20.0')
 
@@ -1593,14 +1632,24 @@ def assign_application_to_week(request, application_id):
             messages.success(request, 'Application assigned to commission week successfully!')
             return redirect('commission_week_detail', pk=week.pk)
     else:
-        form = CommissionApplicationMappingForm(initial={'application': application})
+        # Only show current and future weeks
+        current_date = date.today()
+        current_week = current_date.isocalendar()[1]
+        current_year = current_date.year
+        
+        future_weeks = CommissionWeek.objects.filter(
+            Q(year__gt=current_year) | 
+            Q(year=current_year, week_number__gte=current_week)
+        ).filter(advisor=request.user)
+        
+        form = CommissionApplicationMappingForm()
+        form.fields['commission_week'].queryset = future_weeks
 
     context = {
         'form': form,
         'application': application,
     }
     return render(request, 'crm/assign_to_week.html', context)
-
 
 @login_required
 def update_commission_mapping(request, mapping_id):
@@ -1615,13 +1664,14 @@ def update_commission_mapping(request, mapping_id):
         form = CommissionApplicationMappingForm(request.POST, instance=mapping)
         if form.is_valid():
             old_actual = mapping.actual_commission or Decimal('0')
-            mapping = form.save()
+            mapping = form.save(commit=False)
+            mapping.updated_by = request.user  # Track which manager made the update
+            mapping.save()
 
             # Update commission week totals
             week = mapping.commission_week
             if mapping.actual_commission:
-                week.total_actual_commission = (week.total_actual_commission or Decimal(
-                    '0')) - old_actual + mapping.actual_commission
+                week.total_actual_commission = (week.total_actual_commission or Decimal('0')) - old_actual + mapping.actual_commission
             week.save()
 
             messages.success(request, 'Commission mapping updated successfully!')
@@ -1634,6 +1684,26 @@ def update_commission_mapping(request, mapping_id):
         'mapping': mapping,
     }
     return render(request, 'crm/commission_mapping_form.html', context)
+
+@login_required
+def submit_week_for_approval(request, week_id):
+    """Advisor submits week for manager approval"""
+    week = get_object_or_404(CommissionWeek, pk=week_id, advisor=request.user)
+    
+    if week.status != 'Open':
+        messages.error(request, 'Only open weeks can be submitted for approval.')
+        return redirect('commission_week_detail', pk=week_id)
+    
+    # Validate that week has applications
+    if not CommissionApplicationMapping.objects.filter(commission_week=week).exists():
+        messages.error(request, 'Cannot submit empty week for approval.')
+        return redirect('commission_week_detail', pk=week_id)
+    
+    week.status = 'Pending Review'
+    week.save()
+    
+    messages.success(request, f'Week {week.week_number} submitted for manager approval.')
+    return redirect('commission_week_detail', pk=week_id)
 
 
 @login_required
@@ -1689,11 +1759,8 @@ def weekly_commission_report(request):
     return render(request, 'crm/weekly_commission_report.html', context)
 
 # views.py
-from datetime import datetime, timedelta  # Correct import
+from datetime import datetime, timedelta  
 from django.utils import timezone
-
-# ... your other imports ...
-
 @login_required
 def auto_assign_applications(request):
     """Automatically assign eligible applications to current commission week"""
@@ -1701,68 +1768,55 @@ def auto_assign_applications(request):
         messages.error(request, 'Only managers can auto-assign applications.')
         return redirect('dashboard')
 
-    # Get current week number
+    # Get current week number using ISO standard
     current_date = timezone.now().date()
     week_number = current_date.isocalendar()[1]
     year = current_date.year
 
-    # Get or create current commission week for each advisor
-    advisors = User.objects.filter(is_active=True)
     assigned_count = 0
 
-    for advisor in advisors:
-        # Get current week or create it
+    for advisor in User.objects.filter(is_active=True):
+        # Get current week or create it with proper dates
+        week_start = current_date - timedelta(days=current_date.weekday())
+        week_end = week_start + timedelta(days=6)
+        
         week, created = CommissionWeek.objects.get_or_create(
             week_number=week_number,
             year=year,
             advisor=advisor,
             defaults={
-                'start_date': current_date - timedelta(days=current_date.weekday()),
-                'end_date': current_date + timedelta(days=6 - current_date.weekday()),
+                'start_date': week_start,
+                'end_date': week_end,
+                'status': 'Open'
             }
         )
 
-        # Find eligible applications for this advisor
+        # Find eligible insurance applications with status Active or Underwriter
         eligible_apps = Application.objects.filter(
             advisor=advisor,
-            application_status__in=['Underwriting', 'Approved', 'Completed'],
-            commissionapplicationmapping__isnull=True  # Not already mapped
+            application_type='Insurance',
+            insurance__policy_status__in=['Active', 'Underwriter'],
+            commissionapplicationmapping__isnull=True
         )
 
         for app in eligible_apps:
-            # Check if application should be included based on insurance status
-            include_app = False
-            if app.application_type == 'Insurance' and app.insurance:
-                include_app = app.insurance.policy_status in ['Active', 'Underwriter']
-            elif app.application_type == 'Mortgage' and app.mortgage:
-                include_app = app.mortgage.mortgage_status in ['Application', 'Approved', 'Completed']
+            # Create mapping
+            mapping = CommissionApplicationMapping(
+                application=app,
+                commission_week=week,
+                estimated_commission=app.insurance.premium_amount * Decimal('0.2'),
+                commission_rate=Decimal('20.0')
+            )
+            mapping.save()
+            assigned_count += 1
 
-            if include_app:
-                # Create mapping
-                mapping = CommissionApplicationMapping(
-                    application=app,
-                    commission_week=week,
-                    estimated_commission=Decimal('0'),
-                    commission_rate=Decimal('0')
-                )
+            # Update week totals
+            week.total_estimated_commission += mapping.estimated_commission
+            week.save()
 
-                # Calculate estimated commission
-                if app.application_type == 'Mortgage' and app.mortgage:
-                    mapping.estimated_commission = app.mortgage.loan_amount * Decimal('0.005')
-                    mapping.commission_rate = Decimal('0.5')
-                elif app.application_type == 'Insurance' and app.insurance:
-                    mapping.estimated_commission = app.insurance.premium_amount * Decimal('0.2')
-                    mapping.commission_rate = Decimal('20.0')
-
-                mapping.save()
-                assigned_count += 1
-
-                # Update week totals
-                week.total_estimated_commission += mapping.estimated_commission
-                week.save()
-
-    messages.success(request, f'Automatically assigned {assigned_count} applications to commission weeks.')
+    messages.success(request, f'Automatically assigned {assigned_count} applications to week {week_number}.')
     return redirect('commission_weeks')
+
 @login_required
 def commission_week_update(request, pk):
     """Update a commission week"""
@@ -1806,3 +1860,138 @@ def payment_detail(request, pk):
     """Payment detail view"""
     payment = get_object_or_404(Payment, pk=pk)
     return render(request, 'crm/payment_detail.html', {'payment': payment})
+
+class AddApplicationToWeekView(ListView):
+    model = Application
+    template_name = 'add_application_to_week.html'
+    context_object_name = 'applications'
+    
+    def get_queryset(self):
+        self.week = get_object_or_404(CommissionWeek, pk=self.kwargs['week_id'])
+        
+        # Get applications that are not already mapped to any commission week
+        # and are either approved or in underwriting for insurance
+        queryset = Application.objects.filter(
+            Q(advisor=self.request.user) | Q(advisor__isnull=True),
+            application_status__in=['Approved', 'Under Review']
+        ).exclude(
+            commissionmapping__isnull=False
+        )
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['week'] = self.week
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        week = get_object_or_404(CommissionWeek, pk=kwargs['week_id'])
+        application_ids = request.POST.getlist('applications')
+        
+        for app_id in application_ids:
+            application = get_object_or_404(Application, pk=app_id)
+            
+            # Create commission mapping
+            CommissionMapping.objects.create(
+                commission_week=week,
+                application=application,
+                commission_rate=20 if application.application_type == 'Insurance' else 0.5,
+                updated_by=request.user
+            )
+        
+        messages.success(request, f'{len(application_ids)} applications added to commission week.')
+        return redirect('commission_week_detail', pk=week.pk)
+
+class CommissionWeeksListView(ListView):
+    model = CommissionWeek
+    template_name = 'crm/commission_weeks.html'  # Add the 'crm/' prefix
+    context_object_name = 'weeks'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        queryset = CommissionWeek.objects.all()
+        
+        # Filter by advisor if requested
+        advisor_id = self.request.GET.get('advisor')
+        if advisor_id:
+            queryset = queryset.filter(advisor_id=advisor_id)
+        
+        # Filter by status if requested
+        status = self.request.GET.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        # Filter by year if requested
+        year = self.request.GET.get('year')
+        if year:
+            queryset = queryset.filter(year=year)
+        
+        return queryset.select_related('advisor').order_by('-year', '-week_number')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Use User model instead of Advisor
+        context['advisors'] = User.objects.filter(is_active=True)
+        
+        # Get status choices from the model
+        context['status_choices'] = CommissionWeek._meta.get_field('status').choices
+        
+        # Get distinct years from CommissionWeek
+        years = CommissionWeek.objects.dates('start_date', 'year')
+        context['years'] = [year.year for year in years] if years else [datetime.now().year]
+        
+        return context    
+    
+class WeeklyCommissionReportView(TemplateView):
+    template_name = 'crm/weekly_commission_report.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get filter parameters
+        week = self.request.GET.get('week')
+        year = self.request.GET.get('year')
+        advisor_id = self.request.GET.get('advisor')
+        
+        # Build queryset
+        weeks = CommissionWeek.objects.all()
+        
+        if week and year:
+            weeks = weeks.filter(week_number=week, year=year)
+        elif not week and not year:
+            # Default to current week
+            current_week = datetime.now().isocalendar()[1]
+            current_year = datetime.now().year
+            weeks = weeks.filter(week_number=current_week, year=current_year)
+        
+        if advisor_id:
+            weeks = weeks.filter(advisor_id=advisor_id)
+        
+        context['commission_weeks'] = weeks.select_related('advisor')
+        # Use User model instead of Advisor
+        context['advisors'] = User.objects.filter(is_active=True)
+        
+        # Calculate totals
+        total_estimated = weeks.aggregate(Sum('total_estimated_commission'))['total_estimated_commission__sum'] or 0
+        total_actual = weeks.aggregate(Sum('total_actual_commission'))['total_actual_commission__sum'] or 0
+        
+        context['total_estimated'] = total_estimated
+        context['total_actual'] = total_actual
+        context['variance'] = total_estimated - total_actual
+        context['variance_percentage'] = (context['variance'] / total_estimated * 100) if total_estimated else 0
+        
+        return context
+    
+class UpdateCommissionMappingView(LoginRequiredMixin, UpdateView):
+    """Update commission mapping view"""
+    model = CommissionMapping
+    form_class = CommissionMappingForm  
+    template_name = 'crm/commission_mapping_form.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('commission_week_detail', kwargs={'pk': self.object.commission_week.pk})
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Commission mapping updated successfully!')
+        return super().form_valid(form)

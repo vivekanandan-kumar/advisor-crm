@@ -3,10 +3,11 @@
 {% block title %}{% if form.instance.pk %}Edit Insurance Policy{% else %}Add New Insurance Policy{% endif %} - Advisor CRM{% endblock %}
 {% block page_title %}{% if form.instance.pk %}Edit Insurance Policy{% else %}Add New Insurance Policy{% endif %}{% endblock %}
 
-{% block page_actions %}
-<a href="{% if form.instance.pk %}{% url 'insurance_detail' form.instance.pk %}{% else %}{% url 'insurance_list' %}{% endif %}" class="btn btn-outline-primary">
-    <i class="bi bi-arrow-left"></i> Back to {% if form.instance.pk %}Details{% else %}Policies{% endif %}
+{% block page_specific_actions %}
+<a href="{% if form.instance.pk %}{% url 'insurance_detail' form.instance.pk %}{% else %}{% url 'insurance_list' %}{% endif %}" class="btn btn-outline-primary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i> Back to {% if form.instance.pk %}Details{% else %}Policies{% endif %}
 </a>
+
 {% endblock %}
 
 {% block content %}

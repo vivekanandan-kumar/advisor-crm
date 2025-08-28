@@ -3,7 +3,7 @@
 {% block title %}Add Communication - {{ customer.first_name }} {{ customer.last_name }}{% endblock %}
 {% block page_title %}Add Communication{% endblock %}
 
-{% block page_actions %}
+{% block page_specific_actions %}
 <a href="{% url 'customer_detail' customer.pk %}" class="btn btn-outline-primary">
     <i class="bi bi-arrow-left"></i> Back to Customer
 </a>

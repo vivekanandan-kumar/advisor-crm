@@ -527,35 +527,74 @@ class Payment(models.Model):
 
 
 class CommissionWeek(models.Model):
-    week_id = models.AutoField(primary_key=True)
-    week_number = models.IntegerField()  # 1-52
-    year = models.IntegerField()
-    start_date = models.DateField()
-    end_date = models.DateField()
-    advisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    total_estimated_commission = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    total_actual_commission = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    status = models.CharField(max_length=20, choices=[
+    STATUS_CHOICES = [
         ('Open', 'Open'),
         ('Pending Review', 'Pending Review'),
         ('Approved', 'Approved'),
-        ('Paid', 'Paid')
-    ], default='Open')
-    notes = models.TextField(blank=True)
+        ('Paid', 'Paid'),
+        ('Disputed', 'Disputed'),
+    ]
+    
+    advisor = models.ForeignKey(Advisor, on_delete=models.CASCADE)
+    week_number = models.IntegerField()
+    year = models.IntegerField()
+    start_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Open')
+    total_estimated_commission = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_actual_commission = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'commission_weeks'
-        unique_together = ['week_number', 'year', 'advisor']
-        indexes = [
-            models.Index(fields=['advisor']),
-            models.Index(fields=['week_number', 'year']),
-            models.Index(fields=['status']),
-        ]
+        unique_together = ['advisor', 'week_number', 'year']
+        ordering = ['-year', '-week_number']
+    
+    def update_totals(self):
+        """Update the total estimated and actual commission for this week"""
+        from django.db.models import Sum
+        totals = self.mappings.aggregate(
+            total_estimated=Sum('estimated_commission'),
+            total_actual=Sum('actual_commission')
+        )
+        self.total_estimated_commission = totals['total_estimated'] or 0
+        self.total_actual_commission = totals['total_actual'] or 0
+        self.save()
 
     def __str__(self):
         return f"Week {self.week_number} {self.year} - {self.advisor}"
+
+
+class CommissionMapping(models.Model):
+    commission_week = models.ForeignKey(CommissionWeek, on_delete=models.CASCADE, related_name='mappings')
+    application = models.OneToOneField(Application, on_delete=models.CASCADE)  # One-to-one to prevent multiple assignments
+    insurance_policy = models.ForeignKey(InsurancePolicy, on_delete=models.CASCADE, null=True, blank=True)
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    estimated_commission = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    actual_commission = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(Advisor, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_mappings')
+
+    class Meta:
+        unique_together = ['application', 'insurance_policy']
+
+    def __str__(self):
+        return f"{self.commission_week} - {self.application}"
+
+    def save(self, *args, **kwargs):
+        # Calculate estimated commission if not set
+        if not self.estimated_commission and self.application:
+            if self.application.application_type == 'Mortgage' and hasattr(self.application, 'mortgage'):
+                self.estimated_commission = self.application.mortgage.loan_amount * (self.commission_rate / 100)
+            elif self.application.application_type == 'Insurance' and hasattr(self.application, 'insurance'):
+                self.estimated_commission = self.application.insurance.premium_amount * (self.commission_rate / 100)
+        
+        # Update the parent commission week totals
+        super().save(*args, **kwargs)
+        self.commission_week.update_totals()
 
 class Commission(models.Model):
     COMMISSION_TYPES = [
@@ -608,6 +647,8 @@ class CommissionApplicationMapping(models.Model):
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, 
+                                 null=True, blank=True, related_name='updated_commissions')
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
