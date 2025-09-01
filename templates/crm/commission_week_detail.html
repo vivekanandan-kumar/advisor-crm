@@ -9,8 +9,8 @@
     <i class="bi bi-arrow-left"></i> Back to Commission Weeks
 </a>
 {% if week.status == 'Open' and week.advisor == user %}
-<a href="{% url 'add_application_to_week' week.pk %}" class="btn btn-primary">
-    <i class="bi bi-plus-circle"></i> Add Applications
+<a href="{% url 'add_insurance_to_week' week.pk %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle"></i> Add Insurance Policies
 </a>
 <form method="post" action="{% url 'submit_week_for_approval' week.pk %}" class="d-inline">
     {% csrf_token %}
@@ -22,165 +22,209 @@
 {% endblock %}
 
 {% block content %}
-<div class="row">
+
+<!-- Advisor Information -->
+<div class="row mb-4">
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Week Information</h5>
+        <div class="d-flex flex-column">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                    <i class="bi bi-person-circle text-primary"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Advisor Name</small>
+                    <span class="fw-semibold">{{ week.advisor.get_full_name }}</span>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-sm-4">
-                        <strong>Week:</strong>
-                    </div>
-                    <div class="col-sm-8">
-                        Week {{ week.week_number }} {{ week.year }}
-                    </div>
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                    <i class="bi bi-calendar-week text-primary"></i>
                 </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4">
-                        <strong>Advisor:</strong>
-                    </div>
-                    <div class="col-sm-8">
-                        {{ week.advisor.get_full_name }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4">
-                        <strong>Period:</strong>
-                    </div>
-                    <div class="col-sm-8">
-                        {{ week.start_date|date:"M d, Y" }} - {{ week.end_date|date:"M d, Y" }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4">
-                        <strong>Estimated Commission:</strong>
-                    </div>
-                    <div class="col-sm-8">
-                        £{{ week.total_estimated_commission|floatformat:2 }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4">
-                        <strong>Actual Commission:</strong>
-                    </div>
-                    <div class="col-sm-8">
-                        £{{ week.total_actual_commission|floatformat:2 }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-4">
-                        <strong>Status:</strong>
-                    </div>
-                    <div class="col-sm-8">
-                        <span class="badge bg-{% if week.status == 'Paid' %}success{% elif week.status == 'Pending Review' %}warning{% elif week.status == 'Open' %}info{% else %}primary{% endif %}">
-                            {{ week.status }}
-                        </span>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Business Week</small>
+                    <span class="fw-semibold">{{ week.start_date|date:"d.m.Y" }} to {{ week.end_date|date:"d.m.Y"}}</span>
                 </div>
             </div>
         </div>
     </div>
-    
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Commission Summary</h5>
+        <div class="d-flex flex-column align-items-md-end">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                    <i class="bi bi-calendar-date text-primary"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Report Date</small>
+                    <span class="fw-semibold">{% now "d.m.Y" %}</span>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-4">
-                        <div class="h4 font-weight-bold text-primary">£{{ week.total_estimated_commission|floatformat:2 }}</div>
-                        <small class="text-muted">Estimated</small>
-                    </div>
-                    <div class="col-4">
-                        <div class="h4 font-weight-bold text-success">£{{ week.total_actual_commission|floatformat:2 }}</div>
-                        <small class="text-muted">Actual</small>
-                    </div>
-                    <div class="col-4">
-                        <div class="h4 font-weight-bold text-info">{{ week.mappings.count }}</div>
-                        <small class="text-muted">Applications</small>
-                    </div>
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                    <i class="bi bi-hash text-primary"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Week Number</small>
+                    <span class="fw-semibold">{{ week.week_number }}</span>
                 </div>
             </div>
         </div>
-        
-        {% if week.notes %}
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Notes</h5>
-            </div>
-            <div class="card-body">
-                {{ week.notes|linebreaks }}
-            </div>
+    </div>
+</div>
+<!-- Mapped Insurance Policies -->
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Mapped Insurance Policies ({{ commission_mappings.count }})</h5>
+    </div>
+    <div class="card-body">
+        {% if commission_mappings %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <!-- Fix the table header to match data order -->
+                <thead>
+                    <tr>
+                        <th>Policy #</th>
+                        <th>Customer</th>
+                        <th>Type</th>
+                        <th>Premium</th>
+                        <th>Status</th>
+                        <th>Commission Rate</th>
+                        <th>Estimated</th>
+                        <th>Actual</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mapping in commission_mappings %}
+                    <tr class="{% if mapping.has_dispute %}table-warning{% endif %}">
+                        <td>
+                            {{ mapping.insurance_policy.policy_number|default:"N/A" }}
+                            {% if mapping.has_dispute %}
+                            <span class="badge badge-warning ml-1" title="Dispute raised">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ mapping.insurance_policy.customer.first_name }} {{mapping.insurance_policy.customer.last_name }}</td>
+                        <td>{{ mapping.insurance_policy.policy_type }}</td>
+                        <td>£{{ mapping.insurance_policy.premium_amount|floatformat:2 }}</td>
+                        <td>
+                            {% if mapping.status %}
+                            {{ mapping.get_status_display }}
+                            {% else %}
+                            Pending
+                            {% endif %}
+                        </td>
+                        <td>{{ mapping.commission_rate }}%</td>
+                        <td>£{{ mapping.estimated_commission|floatformat:2 }}</td>
+                        <td>£{{ mapping.actual_commission|floatformat:2|default:"0.00" }}</td>
+                        <td>
+                            <a href="{% url 'update_commission_mapping' mapping.id %}" class="btn btn-sm btn-primary">
+                                Update
+                            </a>
+                            {% if not mapping.has_dispute %}
+                            <a href="{% url 'raise_dispute' mapping.id %}" class="btn btn-sm btn-warning">
+                                Dispute
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="bi bi-file-text display-4 text-muted"></i>
+            <p class="text-muted mt-3">No insurance policies mapped to this week.</p>
+            {% if week.status == 'Open' and week.advisor == user %}
+            <a href="{% url 'add_insurance_to_week' week.pk %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Policies
+            </a>
+            {% endif %}
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- Mapped Applications -->
+<!-- Add this section to commission_week_detail.html after the commission mappings table -->
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">Mapped Applications ({{ week.mappings.count }})</h5>
+    <div class="card-header bg-warning text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Commission Disputes
+            {% if week.disputes.exists %}
+            <span class="badge bg-danger ms-2">{{ week.disputes.count }}</span>
+            {% endif %}
+        </h5>
     </div>
     <div class="card-body">
-        {% if week.mappings.all %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Application #</th>
-                            <th>Type</th>
-                            <th>Customer</th>
-                            <th>Commission Rate</th>
-                            <th>Estimated</th>
-                            <th>Actual</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for mapping in week.mappings.all %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'application_detail' mapping.application.pk %}">
-                                        {{ mapping.application.application_number }}
-                                    </a>
-                                </td>
-                                <td>{{ mapping.application.application_type }}</td>
-                                <td>{{ mapping.application.customer.first_name }} {{ mapping.application.customer.last_name }}</td>
-                                <td>{{ mapping.commission_rate }}%</td>
-                                <td>£{{ mapping.estimated_commission|floatformat:2 }}</td>
-                                <td>
-                                    {% if mapping.actual_commission %}
-                                        £{{ mapping.actual_commission|floatformat:2 }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if user.is_manager or week.advisor == user %}
-                                        <a href="{% url 'update_commission_mapping' mapping.pk %}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-pencil"></i> Edit
-                                        </a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        {% if week.disputes.exists %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Policy Number</th>
+                        <th>Disputed Amount</th>
+                        <th>Status</th>
+                        <th>Date Raised</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dispute in week.disputes.all %}
+                    <tr
+                        class="{% if dispute.status == 'Open' %}table-warning{% elif dispute.status == 'Resolved' %}table-success{% elif dispute.status == 'Rejected' %}table-danger{% endif %}">
+                        <td>{{ dispute.commission_mapping.insurance_policy.policy_number }}</td>
+                        <td>£{{ dispute.disputed_amount|floatformat:2 }}</td>
+                        <td>
+                            <span
+                                class="badge bg-{% if dispute.status == 'Open' %}warning{% elif dispute.status == 'Resolved' %}success{% else %}danger{% endif %}">
+                                {{ dispute.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ dispute.raised_date|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'view_disputes' %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i> View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
-            <div class="text-center py-4">
-                <i class="bi bi-file-text display-4 text-muted"></i>
-                <p class="text-muted mt-3">No applications mapped to this week.</p>
-                {% if week.status == 'Open' and week.advisor == user %}
-                    <a href="{% url 'add_application_to_week' week.pk %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Add Applications
-                    </a>
-                {% endif %}
-            </div>
+        <p class="text-muted text-center mb-0">No disputes raised for this commission week.</p>
         {% endif %}
     </div>
 </div>
+
+{% if can_approve %}
+<div class="mt-3">
+    <a href="{% url 'commission_week_approval' week.pk %}" class="btn btn-success">
+        <i class="bi bi-check-circle"></i> Review & Approve
+    </a>
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Form validation
+        document.getElementById('weekSearchForm').addEventListener('submit', function (e) {
+            const week = document.getElementById('weekInput').value;
+            const year = document.getElementById('yearInput').value;
+
+            if (!week || !year) {
+                e.preventDefault();
+                alert('Please enter both week and year values');
+            }
+        });
+
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
 {% endblock %}

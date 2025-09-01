@@ -1,0 +1,66 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Add Insurance Policies to Week {{ week.week_number }}</h1>
+        <a href="{% url 'commission_week_detail' week.pk %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left fa-sm"></i> Back to Week
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Available Insurance Policies</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if available_policies %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Select</th>
+                                <th>Policy #</th>
+                                <th>Type</th>
+                                <th>Customer</th>
+                                <th>Premium</th>
+                                <th>Status</th>
+                                <th>Estimated Commission</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for policy in available_policies %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="policy_ids" value="{{ policy.pk }}">
+                                </td>
+                                <td>{{ policy.policy_number|default:"Not assigned" }}</td>
+                                <td>{{ policy.policy_type }}</td>
+                                <td>{{ policy.customer.first_name }} {{ policy.customer.last_name }}</td>
+                                <td>£{{ policy.premium_amount|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge badge-{% if policy.policy_status == 'Active' %}success{% else %}warning{% endif %}">
+                                        {{ policy.policy_status }}
+                                    </span>
+                                </td>
+                                <td>£{{ policy.premium_amount|multiply:0.2|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Add Selected Policies</button>
+                {% else %}
+                <p class="text-center">No available insurance policies to add.</p>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -7,11 +7,11 @@ from django.utils import timezone
 import json
 from django.conf import settings
 import uuid
+from datetime import datetime
 
 def generate_mortgage_id():
     # This function creates a unique, human-readable ID
     # Adjust the format 'INS_{...}' to match your requirements
-    from datetime import datetime
     now = datetime.now()
     timestamp = now.strftime('%Y%m%d%H%M%S')
     # Use a part of a UUID for extra uniqueness
@@ -21,7 +21,7 @@ def generate_mortgage_id():
 def generate_insurance_id():
     # This function creates a unique, human-readable ID
     # Adjust the format 'INS_{...}' to match your requirements
-    from datetime import datetime
+
     now = datetime.now()
     timestamp = now.strftime('%Y%m%d%H%M%S')
     # Use a part of a UUID for extra uniqueness
@@ -194,13 +194,23 @@ class Mortgage(models.Model):
         ]
 
 
-
     def save(self, *args, **kwargs):
-        if not self.mortgage_id:  # Only for new instances
-            # Generate mortgage ID in the format: MRT-ADVISOR_ID-YYYYMMDDHHMISS
-            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-            self.mortgage_id = f"MRT-{self.advisor.id}-{timestamp}"
+        is_new = self._state.adding
         super().save(*args, **kwargs)
+
+        # Only create application for new mortgages that don't already have one
+        if is_new and not hasattr(self, 'application'):
+            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+            application_number = f"APP_MRT_{self.advisor.id}_{timestamp}"
+
+            Application.objects.create(
+                customer=self.customer,
+                application_type='Mortgage',
+                application_status='Application Submitted',
+                mortgage=self,
+                advisor=self.advisor,
+                application_number=application_number
+            )
 
     def __str__(self):
         return f"{self.customer} - £{self.loan_amount} - {self.mortgage_type}"
@@ -271,11 +281,23 @@ class InsurancePolicy(models.Model):
 
     
     def save(self, *args, **kwargs):
-        if not self.insurance_id:  # Only for new instances
-            # Generate insurance ID in the format: INS-ADVISOR_ID-YYYYMMDDHHMISS
-            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-            self.insurance_id = f"INS-{self.advisor.id}-{timestamp}"
+        is_new = self._state.adding
         super().save(*args, **kwargs)
+
+        # Only create application for new insurance policies that don't already have one
+        if is_new and not hasattr(self, 'application'):
+            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+            application_number = f"APP_INS_{self.advisor.id}_{timestamp}"
+
+            Application.objects.create(
+                customer=self.customer,
+                application_type='Insurance',
+                application_status='Application Submitted',
+                insurance=self,
+                insurance_type=self.policy_type,
+                advisor=self.advisor,
+                application_number=application_number
+            )
 
     def __str__(self):
         return f"{self.customer} - {self.policy_type} - {self.policy_number}"
@@ -326,7 +348,7 @@ class Application(models.Model):
     application_id = models.AutoField(primary_key=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     mortgage = models.ForeignKey(Mortgage, on_delete=models.SET_NULL, null=True, blank=True)
-    insurance = models.ForeignKey(InsurancePolicy, on_delete=models.SET_NULL, null=True, blank=True)
+    insurance = models.ForeignKey(InsurancePolicy, on_delete=models.SET_NULL, null=True, blank=True, related_name='applications')
     advisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     solicitor_name = models.CharField(max_length=300, blank=True, null=True)
     application_type = models.CharField(max_length=20, choices=APPLICATION_TYPES)
@@ -345,6 +367,7 @@ class Application(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     insurance_type = models.CharField(max_length=50,choices= POLICY_TYPES, blank=True,null=True)
+    
 
     class Meta:
         db_table = 'applications'
@@ -358,6 +381,8 @@ class Application(models.Model):
         ]
 
     def save(self, *args, **kwargs):
+
+
         if not self.application_number:  # Generate application number if not set
             timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
 
@@ -394,6 +419,7 @@ class Application(models.Model):
     def __str__(self):
         return f"{self.application_number} - {self.customer} - {self.application_type}"
 
+# In models.py - update the Document model
 class Document(models.Model):
     DOCUMENT_TYPES = [
         ('ID Proof', 'ID Proof'),
@@ -415,11 +441,12 @@ class Document(models.Model):
     ]
 
     document_id = models.AutoField(primary_key=True)
-    application = models.ForeignKey(Application, on_delete=models.CASCADE)
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, null=True, blank=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPES)
     document_name = models.CharField(max_length=255)
-    file_path = models.CharField(max_length=500, blank=True)
+    # Replace file_path with document_file
+    document_file = models.FileField(upload_to='documents/%Y/%m/%d/', blank=True, null=True)
     file_size = models.IntegerField(null=True, blank=True)
     mime_type = models.CharField(max_length=100, blank=True)
     document_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Required')
@@ -430,6 +457,8 @@ class Document(models.Model):
     uploaded_by = models.ForeignKey(Advisor, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    insurance = models.ForeignKey(InsurancePolicy, on_delete=models.SET_NULL, null=True, blank=True)
+    mortgage = models.ForeignKey(Mortgage, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'documents'
@@ -439,6 +468,13 @@ class Document(models.Model):
             models.Index(fields=['document_type']),
             models.Index(fields=['document_status']),
         ]
+
+    def save(self, *args, **kwargs):
+        # Set file size and mime type when file is uploaded
+        if self.document_file:
+            self.file_size = self.document_file.size
+            self.mime_type = self.document_file.content_type
+        super().save(*args, **kwargs)
 
 class Communication(models.Model):
     COMMUNICATION_TYPES = [
@@ -469,6 +505,8 @@ class Communication(models.Model):
     communication_date = models.DateTimeField()
     duration_minutes = models.IntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    insurance = models.ForeignKey(InsurancePolicy, on_delete=models.SET_NULL, null=True, blank=True)
+    mortgage = models.ForeignKey(Mortgage, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'communications'
@@ -525,7 +563,7 @@ class Payment(models.Model):
     def __str__(self):
         return f"Payment #{self.payment_id} - £{self.amount} - {self.customer}"
 
-
+# models.py - Update CommissionWeek model
 class CommissionWeek(models.Model):
     STATUS_CHOICES = [
         ('Open', 'Open'),
@@ -546,10 +584,44 @@ class CommissionWeek(models.Model):
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='approved_weeks'
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    manager_notes = models.TextField(blank=True, null=True)
 
     class Meta:
+        db_table = 'commission_week'
         unique_together = ['advisor', 'week_number', 'year']
         ordering = ['-year', '-week_number']
+    
+    def clean(self):
+        """Validate that the same advisor can't have duplicate week numbers in the same year"""
+        if CommissionWeek.objects.filter(
+            advisor=self.advisor,
+            week_number=self.week_number,
+            year=self.year
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError(
+                f"Week {self.week_number} for year {self.year} already exists for this advisor."
+            )
+        
+        # Validate week number range
+        if self.week_number < 1 or self.week_number > 53:
+            raise ValidationError("Week number must be between 1 and 53")
+        
+        # Validate year is not in the future (optional)
+        current_year = datetime.now().year
+        if self.year > current_year:
+            raise ValidationError("Cannot create commission weeks for future years")
+    
+    def save(self, *args, **kwargs):
+        self.clean()  # Run validation before saving
+        super().save(*args, **kwargs)
     
     def update_totals(self):
         """Update the total estimated and actual commission for this week"""
@@ -565,11 +637,9 @@ class CommissionWeek(models.Model):
     def __str__(self):
         return f"Week {self.week_number} {self.year} - {self.advisor}"
 
-
 class CommissionMapping(models.Model):
     commission_week = models.ForeignKey(CommissionWeek, on_delete=models.CASCADE, related_name='mappings')
-    application = models.OneToOneField(Application, on_delete=models.CASCADE)  # One-to-one to prevent multiple assignments
-    insurance_policy = models.ForeignKey(InsurancePolicy, on_delete=models.CASCADE, null=True, blank=True)
+    insurance_policy = models.ForeignKey(InsurancePolicy, on_delete=models.CASCADE)  # Remove OneToOneField for application
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     estimated_commission = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     actual_commission = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
@@ -577,20 +647,20 @@ class CommissionMapping(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(Advisor, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_mappings')
+    has_dispute = models.BooleanField(default=False)
+    processing_date = models.DateField(null=True, blank=True, help_text="Date when the policy was processed")
 
     class Meta:
-        unique_together = ['application', 'insurance_policy']
+        db_table = 'commission_mapping'
+        unique_together = ['commission_week', 'insurance_policy']  # Each policy can only be in a week once
 
     def __str__(self):
-        return f"{self.commission_week} - {self.application}"
+        return f"{self.commission_week} - {self.insurance_policy}"
 
     def save(self, *args, **kwargs):
-        # Calculate estimated commission if not set
-        if not self.estimated_commission and self.application:
-            if self.application.application_type == 'Mortgage' and hasattr(self.application, 'mortgage'):
-                self.estimated_commission = self.application.mortgage.loan_amount * (self.commission_rate / 100)
-            elif self.application.application_type == 'Insurance' and hasattr(self.application, 'insurance'):
-                self.estimated_commission = self.application.insurance.premium_amount * (self.commission_rate / 100)
+        # Calculate estimated commission based on insurance policy
+        if not self.estimated_commission and self.insurance_policy:
+            self.estimated_commission = self.insurance_policy.premium_amount * (self.commission_rate / 100)
         
         # Update the parent commission week totals
         super().save(*args, **kwargs)
@@ -637,27 +707,101 @@ class Commission(models.Model):
             models.Index(fields=['tax_year']),
         ]
 
+# In models.py
+class CommissionDispute(models.Model):
+    DISPUTE_STATUS_CHOICES = [
+        ('Open', 'Open'),
+        ('In Review', 'In Review'),
+        ('Resolved', 'Resolved'),
+        ('Rejected', 'Rejected'),
+    ]
+    
+    commission_mapping = models.ForeignKey(CommissionMapping, on_delete=models.CASCADE, related_name='disputes')
+    raised_by = models.ForeignKey(Advisor, on_delete=models.CASCADE, related_name='disputes_raised')
+    raised_date = models.DateTimeField(auto_now_add=True)
+    dispute_reason = models.TextField()
+    disputed_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    proposed_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=DISPUTE_STATUS_CHOICES, default='Open')
+    resolution_notes = models.TextField(blank=True)
+    resolved_by = models.ForeignKey(Advisor, on_delete=models.SET_NULL, null=True, blank=True, related_name='disputes_resolved')
+    resolved_date = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'commission_dispute'
+        ordering = ['-raised_date']
+    
+    def __str__(self):
+        return f"Dispute #{self.id} - {self.commission_mapping.insurance_policy.policy_number}"
+    
+# models.py
+class DailyAdvisorActivity(models.Model):
+    advisor = models.ForeignKey(Advisor, on_delete=models.CASCADE)
+    date = models.DateField()
+    
+    # Activity metrics
+    calls_made = models.PositiveIntegerField(default=0)
+    appointments_booked = models.PositiveIntegerField(default=0)
+    appointments_attended = models.PositiveIntegerField(default=0)
+    presentations_made = models.PositiveIntegerField(default=0)
+    references_collected = models.PositiveIntegerField(default=0)
+    brochures_sent = models.PositiveIntegerField(default=0)
+    brochures_received = models.PositiveIntegerField(default=0)
+    customer_introductions = models.PositiveIntegerField(default=0)
+    other_sources = models.PositiveIntegerField(default=0)
+    policies_sold = models.PositiveIntegerField(default=0)
+    total_premium = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    home_insurance = models.PositiveIntegerField(default=0)
+    pending_policies_count = models.PositiveIntegerField(default=0)
+    pending_policies_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    remarks = models.TextField(blank=True)
+    mortgages = models.PositiveIntegerField(default=0)
+    wills = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        db_table = 'daily_advisor_activity'
+        unique_together = ['advisor', 'date']
+        verbose_name_plural = 'Daily advisor activities'
 
-class CommissionApplicationMapping(models.Model):
-    mapping_id = models.AutoField(primary_key=True)
-    application = models.OneToOneField(Application, on_delete=models.CASCADE)
-    commission_week = models.ForeignKey(CommissionWeek, on_delete=models.CASCADE)
-    estimated_commission = models.DecimalField(max_digits=10, decimal_places=2)
-    actual_commission = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    commission_rate = models.DecimalField(max_digits=5, decimal_places=2)
-    notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, 
-                                 null=True, blank=True, related_name='updated_commissions')
-    updated_at = models.DateTimeField(auto_now=True)
+class PolicySaleDetail(models.Model):
+    activity = models.ForeignKey(DailyAdvisorActivity, on_delete=models.CASCADE, related_name='policy_details')
+    applicant_name = models.CharField(max_length=255)
+    address = models.TextField()
+    contact_no = models.CharField(max_length=20)
+    date_of_birth = models.DateField(null=True, blank=True)
+    provider = models.CharField(max_length=255)
+    life_cover_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    policy_number = models.CharField(max_length=100)
+    illustration_premium = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    illustration_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    new_premium = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    new_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    policy_status = models.CharField(max_length=50, default='Active')
+    
+    # CIC (Critical Illness Cover) fields
+    cic_cover_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    cic_provider = models.CharField(max_length=255, blank=True)
+    cic_policy_number = models.CharField(max_length=100, blank=True)
+    cic_illustration_premium = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cic_illustration_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cic_new_premium = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cic_new_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cic_policy_status = models.CharField(max_length=50, blank=True)
+    
+    # IP (Income Protection) fields
+    ip_cover_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    ip_provider = models.CharField(max_length=255, blank=True)
+    ip_policy_number = models.CharField(max_length=100, blank=True)
+    ip_illustration_premium = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ip_illustration_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ip_new_premium = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ip_new_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ip_policy_status = models.CharField(max_length=50, blank=True)
+    
+    # Accident Protection
+    accident_policy_number = models.CharField(max_length=100, blank=True)
+    accident_units = models.PositiveIntegerField(default=0)
+    accident_premium = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     class Meta:
-        db_table = 'commission_application_mappings'
-        unique_together = ['application', 'commission_week']
-        indexes = [
-            models.Index(fields=['application']),
-            models.Index(fields=['commission_week']),
-        ]
-
-    def __str__(self):
-        return f"{self.application} -> Week {self.commission_week.week_number}"
+        db_table = 'policy_sale_detail'

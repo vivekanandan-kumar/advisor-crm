@@ -1,0 +1,479 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Weekly Advisor Report - Pinnacle Financial Solutions{% endblock %}
+{% block page_title %}Weekly Advisor Report{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'weekly_commission_report' %}">Commission Report</a></li>
+<li class="breadcrumb-item active" aria-current="page">Weekly Advisor Report</li>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Actions Section - Improved Design -->
+<div class="card enhanced-card mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div class="flex-grow-1">
+                <h5 class="card-title text-primary mb-2">Weekly Report Search</h5>
+                <p class="text-muted mb-0">Select a specific week to view or generate reports</p>
+            </div>
+            
+            <div class="d-flex flex-column flex-md-row gap-3 align-items-start align-items-md-center">
+                <!-- Week Search Form -->
+                <div class="bg-light p-3 rounded-3 shadow-sm">
+                    <form id="weekSearchForm" method="GET" class="d-flex flex-column flex-md-row gap-2 align-items-center mb-0">
+                        <div class="d-flex flex-column flex-md-row align-items-center gap-2">
+                            <span class="fw-bold text-dark me-md-2">Search Week:</span>
+                            <div class="d-flex gap-1">
+                                <div class="position-relative">
+                                    <input type="number" name="week" id="weekInput" value="{{ selected_week }}"
+                                        class="form-control form-control-sm shadow-sm" 
+                                        placeholder="Week" min="1" max="53" style="width: 90px;">
+                                    <span class="position-absolute top-50 end-0 translate-middle-y me-2 text-muted small">Wk</span>
+                                </div>
+                                <div class="position-relative">
+                                    <input type="number" name="year" id="yearInput" value="{{ selected_year }}"
+                                        class="form-control form-control-sm shadow-sm" 
+                                        placeholder="Year" min="2020" max="2030" style="width: 100px;">
+                                    <span class="position-absolute top-50 end-0 translate-middle-y me-2 text-muted small">Yr</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-1 mt-2 mt-md-0">
+                            <button type="submit" id="searchWeekBtn" class="btn btn-sm btn-primary shadow-sm">
+                                <i class="bi bi-search me-1"></i> Go
+                            </button>
+                            <a href="{% url 'advisor_weekly_report' %}" class="btn btn-sm btn-outline-secondary shadow-sm">
+                                <i class="bi bi-x-circle me-1"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                    {% if week_dates %}
+                    <div class="mt-2 text-center text-primary small fw-semibold">
+                        <i class="bi bi-calendar-range me-1"></i>{{ week_dates }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="vr d-none d-md-block"></div>
+
+                <div class="d-flex gap-1">
+                    <button class="btn btn-outline-primary shadow-sm" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Print
+                    </button>
+                    <a href="{% url 'export_advisor_report' %}?week={{ selected_week }}&year={{ selected_year }}"
+                        class="btn btn-outline-info shadow-sm">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Title -->
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <h3 class="fw-bold text-gradient-primary">ADVISORS WEEKLY REPORT</h3>
+        <p class="text-muted mb-0">(To be reported by all Advisers on every Sunday. Email to
+            admin@pinnaclefinancials.co.uk)</p>
+    </div>
+</div>
+
+<!-- Advisor Information -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="d-flex flex-column">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                    <i class="bi bi-person-circle text-primary"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Advisor Name</small>
+                    <span class="fw-semibold">{{ advisor_name }}</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                    <i class="bi bi-calendar-week text-primary"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Business Week</small>
+                    <span class="fw-semibold">{{ business_week_start }} to {{ business_week_end }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="d-flex flex-column align-items-md-end">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                    <i class="bi bi-calendar-date text-primary"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Report Date</small>
+                    <span class="fw-semibold">{% now "d.m.Y" %}</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                    <i class="bi bi-hash text-primary"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Week Number</small>
+                    <span class="fw-semibold">{{ selected_week }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activities Table - Improved Design -->
+<div class="card enhanced-card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Weekly Activities Summary</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive activities-table-container">
+            <table class="table table-hover mb-0 activities-table">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="bg-light text-dark">Day</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="Calls Made">Calls</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="Appointments Booked">
+                            Appts<br>Booked</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="Appointments Attended">
+                            Appts<br>Attended</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="Presentations Made">
+                            Presentations</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="References Collected">
+                            References</th>
+                        <th scope="col" class="text-center" colspan="2" data-bs-toggle="tooltip"
+                            title="Brochures Sent and Received">Brochures</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="Customer Introductions">
+                            Introductions</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="Other Sources">
+                            Other<br>Sources</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="Policies Sold">
+                            Policies<br>Sold</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="Total Premium">
+                            Total<br>Premium</th>
+                        <th scope="col" class="text-center" data-bs-toggle="tooltip" title="Home Insurance">
+                            Home<br>Insurance</th>
+                        <th scope="col" class="text-center" colspan="2" data-bs-toggle="tooltip"
+                            title="Pending Policies">Pending<br>Policies</th>
+                        <th scope="col" class="text-center">Remarks</th>
+                        <th scope="col" class="text-center">Mortgages</th>
+                        <th scope="col" class="text-center">Wills</th>
+                    </tr>
+                    <tr class="sub-header">
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="text-center bg-light" data-bs-toggle="tooltip" title="Brochures Sent">Sent</th>
+                        <th class="text-center bg-light" data-bs-toggle="tooltip" title="Brochures Received">Received
+                        </th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="text-center bg-light" data-bs-toggle="tooltip" title="Pending Policies Count">Count
+                        </th>
+                        <th class="text-center bg-light" data-bs-toggle="tooltip" title="Pending Policies Amount">Amount
+                        </th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                        <th class="bg-light"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day_data in weekly_data %}
+                    <tr class="{% if forloop.last %}table-active fw-bold{% endif %}">
+                        <td class="fw-semibold {% if not forloop.last %}text-primary{% endif %}">{{ day_data.day_name }}
+                        </td>
+                        <td class="text-center">{{ day_data.calls_made }}</td>
+                        <td class="text-center">{{ day_data.appointments_booked }}</td>
+                        <td class="text-center">{{ day_data.appointments_attended }}</td>
+                        <td class="text-center">{{ day_data.presentations_made }}</td>
+                        <td class="text-center">{{ day_data.references_collected }}</td>
+                        <td class="text-center">{{ day_data.brochures_sent }}</td>
+                        <td class="text-center">{{ day_data.brochures_received }}</td>
+                        <td class="text-center">{{ day_data.customer_introductions }}</td>
+                        <td class="text-center">{{ day_data.other_sources }}</td>
+                        <td class="text-center">{{ day_data.policies_sold }}</td>
+                        <td class="text-center fw-semibold">£{{ day_data.total_premium|floatformat:2|intcomma }}</td>
+                        <td class="text-center">{{ day_data.home_insurance }}</td>
+                        <td class="text-center">{{ day_data.pending_policies_count }}</td>
+                        <td class="text-center">£{{ day_data.pending_policies_amount|floatformat:2|intcomma }}</td>
+                        <td class="text-center">
+                            {% if day_data.remarks %}
+                            <span class="d-inline-block text-truncate" style="max-width: 120px;"
+                                data-bs-toggle="tooltip" title="{{ day_data.remarks }}">
+                                {{ day_data.remarks }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ day_data.mortgages }}</td>
+                        <td class="text-center">{{ day_data.wills }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Policy Details Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="fw-bold text-primary mb-3">Policy Details</h5>
+
+        {% for day_data in weekly_data %}
+        {% if day_data.policy_details %}
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">{{ day_data.day_name }} - {{ day_data.date|date:"d.m.Y" }}</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Address</th>
+                                <th>Contact No</th>
+                                <th>DOB</th>
+                                <th>Provider</th>
+                                <th>Life Cover</th>
+                                <th>Policy No</th>
+                                <th>Premium</th>
+                                <th>Commission</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for policy in day_data.policy_details %}
+                            <tr>
+                                <td>{{ policy.applicant_name }}</td>
+                                <td>{{ policy.address|truncatewords:3 }}</td>
+                                <td>{{ policy.contact_no }}</td>
+                                <td>{% if policy.date_of_birth %}{{ policy.date_of_birth|date:"d.m.Y" }}{% else %}N/A{% endif %}</td>
+                                <td>{{ policy.provider }}</td>
+                                <td>£{{ policy.life_cover_amount|floatformat:2|intcomma }}</td>
+                                <td>{{ policy.policy_number }}</td>
+                                <td>£{{ policy.illustration_premium|floatformat:2|intcomma }}</td>
+                                <td>£{{ policy.illustration_commission|floatformat:2|intcomma }}</td>
+                                <td>
+                                    <span class="badge bg-{% if policy.policy_status == 'Active' %}success{% else %}warning{% endif %}"> {{ policy.policy_status }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Footer with timestamp -->
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <hr>
+        <small class="text-muted">Report generated on: {% now "F j, Y, g:i a" %}</small>
+    </div>
+</div>
+
+<style>
+    .text-gradient-primary {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Improved table styling */
+    .activities-table-container {
+        overflow-x: auto;
+        max-width: 100%;
+    }
+
+    .activities-table {
+        min-width: 1200px;
+        /* Minimum width to ensure all columns are visible */
+        table-layout: auto;
+        width: 100%;
+    }
+
+    .activities-table th {
+        font-size: 0.75rem;
+        padding: 0.5rem;
+        white-space: normal;
+        line-height: 1.2;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .activities-table td {
+        font-size: 0.8rem;
+        padding: 0.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
+
+    .activities-table .sub-header th {
+        font-size: 0.7rem;
+        padding: 0.3rem;
+    }
+
+    /* Make the table more compact */
+    .activities-table th,
+    .activities-table td {
+        max-width: 80px;
+    }
+
+    /* Specific column adjustments */
+    .activities-table th:nth-child(1) {
+        /* Day column */
+        min-width: 60px;
+        max-width: 60px;
+    }
+
+    .activities-table th:nth-child(16) {
+        /* Remarks column */
+        min-width: 100px;
+        max-width: 100px;
+    }
+
+    /* Highlight the total row */
+    .table-active {
+        background-color: rgba(30, 64, 175, 0.1) !important;
+    }
+
+    /* Enhanced search section styling */
+    .week-input-label {
+        position: relative;
+    }
+    
+    .week-input-label::after {
+        content: "Wk";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+    
+    .year-input-label::after {
+        content: "Yr";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 768px) {
+        .activities-table-container {
+            font-size: 0.8rem;
+        }
+        
+        .vr {
+            display: none !important;
+        }
+        
+        .bg-light.p-3.rounded-3 {
+            width: 100%;
+        }
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .table th {
+            background-color: #f8f9fa !important;
+            color: #000 !important;
+        }
+
+        .badge {
+            border: 1px solid #000;
+            color: #000 !important;
+            background-color: transparent !important;
+        }
+
+        .table-responsive {
+            overflow-x: visible !important;
+        }
+
+        .activities-table {
+            min-width: 100%;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Form validation
+        document.getElementById('weekSearchForm').addEventListener('submit', function (e) {
+            const week = document.getElementById('weekInput').value;
+            const year = document.getElementById('yearInput').value;
+
+            if (!week || !year) {
+                e.preventDefault();
+                alert('Please enter both week and year values');
+            }
+        });
+
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+
+        // Add horizontal scroll indicators for mobile
+        const tableContainer = document.querySelector('.activities-table-container');
+        if (tableContainer) {
+            function checkScroll() {
+                const maxScroll = tableContainer.scrollWidth - tableContainer.clientWidth;
+                if (maxScroll > 0) {
+                    tableContainer.classList.add('scrollable');
+                }
+            }
+
+            checkScroll();
+            window.addEventListener('resize', checkScroll);
+        }
+        
+        // Auto-select current week if not set
+        if (!document.getElementById('weekInput').value) {
+            const now = new Date();
+            const startOfYear = new Date(now.getFullYear(), 0, 1);
+            const days = Math.floor((now - startOfYear) / (24 * 60 * 60 * 1000));
+            const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+            
+            document.getElementById('weekInput').value = weekNumber;
+            document.getElementById('yearInput').value = now.getFullYear();
+        }
+    });
+</script>
+{% endblock %}

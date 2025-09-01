@@ -58,7 +58,14 @@
                         <div class="col-md-6 mb-3">
                             <label for="id_application_type" class="form-label">Application Type <span
                                     class="text-danger">*</span></label>
-                            {{ form.application_type }}
+                            {% if form.instance.pk %}
+                                <!-- Edit mode: show disabled field with hidden input -->
+                                <input type="text" class="form-control" value="{{ form.application_type.value }}" disabled>
+                                <input type="hidden" name="application_type" value="{{ form.application_type.value }}">
+                            {% else %}
+                                <!-- Create mode: show normal select field -->
+                                {{ form.application_type }}
+                            {% endif %}
                             {% if form.application_type.errors %}
                             <div class="text-danger">{{ form.application_type.errors }}</div>
                             {% endif %}
@@ -85,7 +92,9 @@
                                                     <div class="form-check">
                                                         <input class="form-check-input insurance-checkbox"
                                                             type="checkbox" name="insurance_types" value="{{ value }}"
-                                                            id="insurance_{{ value }}">
+                                                            id="insurance_{{ value }}"
+                                                            {% if form.instance.pk and form.instance.insurance_type == value %}checked{% endif %}
+                                                            {% if form.instance.pk %}disabled{% endif %}>
                                                         <label class="form-check-label" for="insurance_{{ value }}">
                                                             {{ label }}
                                                         </label>
@@ -112,7 +121,8 @@
                                 <div class="mb-3">
                                     <label class="form-label">Search Mortgages</label>
                                     <input type="text" class="form-control" id="mortgage-search"
-                                        placeholder="Search by address, postal code, city, or customer name...">
+                                        placeholder="Search by address, postal code, city, or customer name..."
+                                        {% if form.instance.pk %}disabled{% endif %}>
                                     <div class="form-text">Start typing to search for existing mortgages</div>
 
                                     <div id="mortgage-results" class="list-group mt-2"
@@ -121,8 +131,20 @@
 
                                 <div class="mb-3">
                                     <label class="form-label">Selected Mortgages</label>
-                                    <div id="selected-mortgages-display"></div>
-                                    <div id="selected-mortgages"></div>
+                                    <div id="selected-mortgages-display">
+                                        {% if form.instance.pk and form.instance.mortgage %}
+                                        <div class="alert alert-info">
+                                            <strong>Selected Mortgage:</strong><br>
+                                            {{ form.instance.mortgage.property_address }}<br>
+                                            <small class="text-muted">Loan Amount: £{{ form.instance.mortgage.loan_amount|floatformat:2 }}</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div id="selected-mortgages">
+                                        {% if form.instance.pk and form.instance.mortgage %}
+                                        <input type="hidden" name="selected_mortgages" value="{{ form.instance.mortgage.mortgage_id }}">
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -192,8 +214,10 @@
                     </div>
 
                     <!-- Hidden fields for selected values -->
-                    <input type="hidden" name="selected_insurance_types" id="selected_insurance_types">
-                    <input type="hidden" name="selected_mortgages" id="selected_mortgages">
+                    <input type="hidden" name="selected_insurance_types" id="selected_insurance_types" 
+                           value="{% if form.instance.insurance_type %}{{ form.instance.insurance_type }}{% endif %}">
+                    <input type="hidden" name="selected_mortgages" id="selected_mortgages" 
+                           value="{% if form.instance.mortgage %}{{ form.instance.mortgage.mortgage_id }}{% endif %}">
 
                     <!-- Form Actions -->
                     <div class="row">
@@ -270,13 +294,21 @@
 
         // Initialize from hidden fields if they already have values (for edit mode)
         if (selectedMortgagesField.value) {
-            selectedMortgageIds = selectedMortgagesField.value.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
+            selectedMortgageIds = selectedMortgagesField.value.split(',').filter(id => id);
             console.log('Initialized mortgages from hidden field:', selectedMortgageIds);
         }
 
         if (selectedInsuranceTypes.value) {
             selectedInsuranceValues = selectedInsuranceTypes.value.split(',').filter(val => val);
             console.log('Initialized insurance from hidden field:', selectedInsuranceValues);
+            
+            // Check the corresponding insurance checkbox
+            selectedInsuranceValues.forEach(value => {
+                const checkbox = document.querySelector(`input[name="insurance_types"][value="${value}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
         }
 
         // Update the display with existing values
@@ -301,16 +333,32 @@
             }
         }
 
-        // Initial call
-        toggleSections();
-
-        // Add event listener
-        if (applicationType) {
-            applicationType.addEventListener('change', toggleSections);
+        // FIXED: Check if we're in edit mode using a more reliable method
+        const isEditMode = {% if form.instance.pk %}true{% else %}false{% endif %};
+        
+        // Initial call - check if we're in edit mode and set the type accordingly
+        if (applicationType && isEditMode) {
+            // If editing, show the appropriate section based on application type
+            toggleSections();
+            
+            // Disable application type field in edit mode only
+            applicationType.disabled = true;
+        } else {
+            // For new applications, set up event listener
+            if (applicationType) {
+                applicationType.addEventListener('change', toggleSections);
+            }
+            // Initial call for new applications
+            toggleSections();
+            
+            // Ensure application type is enabled for new applications
+            if (applicationType) {
+                applicationType.disabled = false;
+            }
         }
 
-        // Mortgage search functionality
-        if (mortgageSearch) {
+        // Mortgage search functionality (only for new applications)
+        if (mortgageSearch && !mortgageSearch.disabled) {
             mortgageSearch.addEventListener('input', function () {
                 const searchTerm = this.value.trim();
 
@@ -348,7 +396,7 @@
                             const safeAddress = mortgage.address.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
                             // Check if already selected
-                            const isSelected = selectedMortgageIds.includes(parseInt(mortgage.id));
+                            const isSelected = selectedMortgageIds.includes(mortgage.id);
 
                             item.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
@@ -393,7 +441,6 @@
         }
 
         // Function for selecting mortgages
-        // In the selectMortgage function, make sure we're using mortgage_id
         function selectMortgage(mortgageId, address) {
             // Keep as string since mortgage_id is CharField
             // mortgageId is already a string, no need to parse
@@ -453,7 +500,7 @@
         function updateSelectedMortgagesDisplay() {
             selectedMortgagesDisplay.innerHTML = '';
 
-            if (selectedMortgageIds.length === 0) {
+            if (selectedMortgageIds.length === 0 && !"{{ form.instance.mortgage }}") {
                 const emptyMsg = document.createElement('div');
                 emptyMsg.className = 'text-muted';
                 emptyMsg.textContent = 'No mortgages selected';
@@ -520,8 +567,8 @@
                 console.log('Mortgage field value:', selectedMortgagesField.value);
                 console.log('Insurance field value:', selectedInsuranceTypes.value);
 
-                const hasMortgages = selectedMortgageIds.length > 0;
-                const hasInsurance = selectedInsuranceValues.length > 0;
+                const hasMortgages = selectedMortgageIds.length > 0 || "{{ form.instance.mortgage }}";
+                const hasInsurance = selectedInsuranceValues.length > 0 || "{{ form.instance.insurance_type }}";
 
                 console.log('SUBMIT - Validation results:');
                 console.log('Has mortgages:', hasMortgages);

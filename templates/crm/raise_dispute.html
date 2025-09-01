@@ -1,0 +1,90 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Raise Commission Dispute</h1>
+        <a href="{% url 'commission_week_detail' pk=mapping.commission_week.pk %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left fa-sm"></i> Back to Commission Week
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Dispute Details</h6>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6>Policy Information</h6>
+                    <p><strong>Policy Number:</strong> {{ mapping.insurance_policy.policy_number|default:"N/A" }}</p>
+                    <p><strong>Customer:</strong> {{ mapping.insurance_policy.customer.get_full_name }}</p>
+                    <p><strong>Policy Type:</strong> {{ mapping.insurance_policy.policy_type }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Commission Details</h6>
+                    <p><strong>Premium Amount:</strong> £{{ mapping.insurance_policy.premium_amount|floatformat:2 }}</p>
+                    <p><strong>Commission Rate:</strong> {{ mapping.commission_rate }}%</p>
+                    <p><strong>Estimated Commission:</strong> £{{ mapping.estimated_commission|floatformat:2 }}</p>
+                    <p><strong>Actual Commission:</strong> £{{ mapping.actual_commission|floatformat:2|default:"0.00" }}</p>
+                </div>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if messages %}
+                <div class="alert alert-info">
+                    {% for message in messages %}
+                    <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="disputed_amount">Disputed Amount (£)</label>
+                    <input type="number" step="0.01" class="form-control" id="disputed_amount" name="disputed_amount" 
+                           value="{{ mapping.actual_commission|default:mapping.estimated_commission|floatformat:2 }}" required>
+                    <small class="form-text text-muted">The amount you believe is incorrect.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="proposed_amount">Proposed Correct Amount (£) - Optional</label>
+                    <input type="number" step="0.01" class="form-control" id="proposed_amount" name="proposed_amount">
+                    <small class="form-text text-muted">What you believe the correct commission should be.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="dispute_reason">Reason for Dispute</label>
+                    <textarea class="form-control" id="dispute_reason" name="dispute_reason" rows="4" required 
+                              placeholder="Please explain why you believe the commission amount is incorrect..."></textarea>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Important:</strong> Disputes will be reviewed by management. Please provide detailed information to support your claim.
+                </div>
+
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-exclamation-triangle"></i> Submit Dispute
+                </button>
+                <a href="{% url 'commission_week_detail' pk=mapping.commission_week.pk %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-calculate proposed amount if disputed amount changes
+document.getElementById('disputed_amount').addEventListener('change', function() {
+    const disputedAmount = parseFloat(this.value) || 0;
+    const estimatedCommission = parseFloat('{{ mapping.estimated_commission|floatformat:2 }}');
+    
+    // If disputed amount is different from estimated, suggest estimated as proposed
+    if (disputedAmount !== estimatedCommission) {
+        document.getElementById('proposed_amount').value = estimatedCommission.toFixed(2);
+    }
+});
+</script>
+{% endblock %}

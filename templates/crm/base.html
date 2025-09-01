@@ -850,14 +850,20 @@
                                     href="{% url 'weekly_commission_report' %}">
                                     <i class="bi bi-graph-up me-2"></i>Commission Report
                                 </a>
+                                <a class="nav-link {% if request.resolver_match.url_name == 'advisor_weekly_report' %}active{% endif %}"
+                                    href="{% url 'advisor_weekly_report' %}">
+                                    <i class="bi bi-file-text me-2"></i>Weekly Advisor Report
+                                </a>
+                                <!--
                                 <a class="nav-link {% if request.resolver_match.url_name == 'auto_assign_applications' %}active{% endif %}"
                                     href="{% url 'auto_assign_applications' %}">
                                     <i class="bi bi-magic me-2"></i>Auto Assign
                                 </a>
+                                -->
                             </div>
                         </li>
 
-                        <!-- Payments Dropdown Menu -->
+                        <!-- Payments Dropdown Menu 
                         <li class="nav-item nav-dropdown">
                             <a class="nav-link nav-dropdown-toggle {% if 'payment' in request.resolver_match.url_name %}active{% endif %}"
                                 data-bs-toggle="collapse" href="#paymentDropdown" role="button" aria-expanded="false"
@@ -876,6 +882,7 @@
                                 </a>
                             </div>
                         </li>
+                    -->
 
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'renewal_alerts' %}active{% endif %}"
@@ -889,14 +896,35 @@
                                 <i class="bi bi-graph-up me-2"></i>Reports
                             </a>
                         </li>
-
+                        {% if user.is_manager %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'manager_commission_weeks' %}active{% endif %}"
+                                href="{% url 'manager_commission_weeks' %}">
+                                <i class="bi bi-clipboard-check me-2"></i>Pending Approvals
+                                {% if pending_approval_count %}
+                                <span class="badge bg-danger ms-2">{{ pending_approval_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <!-- In the manager section of base.html sidebar -->
+                        {% if user.is_manager %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'view_disputes' %}active{% endif %}"
+                                href="{% url 'view_disputes' %}">
+                                <i class="bi bi-clipboard-x me-2"></i>Dispute Management
+                                {% if pending_disputes_count %}
+                                <span class="badge bg-danger ms-2">{{ pending_disputes_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'advisor' in request.resolver_match.url_name %}active{% endif %}"
                                 href="{% url 'advisor_list' %}">
                                 <i class="bi bi-person-badge me-2"></i>Advisors
                             </a>
                         </li>
-
+                        {% endif %}
                         <hr class="text-light">
                         <li class="nav-item">
                             <form method="post" action="{% url 'logout' %}" class="d-inline">

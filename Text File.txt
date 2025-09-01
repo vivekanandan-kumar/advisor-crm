@@ -1,0 +1,8 @@
+To run this daily, add it to your crontab:
+
+bash
+# Edit crontab
+crontab -e
+
+# Add this line to run at 11:30 PM daily
+30 23 * * * cd /mnt/aaa22500-1d14-4161-b361-89d4e7d74008/Apps/advisor-crm && /path/to/venv/bin/python manage.py update_daily_activities

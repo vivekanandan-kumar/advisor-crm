@@ -1,0 +1,378 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+
+{% block title %}Approve Commission Week - {{ week }}{% endblock %}
+{% block page_title %}Approve Commission Week{% endblock %}
+
+{% block page_specific_actions %}
+<a href="{% url 'manager_commission_weeks' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Pending Weeks
+</a>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    .commission-input {
+        max-width: 120px;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.075);
+    }
+    .actual-commission-cell {
+        background-color: #f8f9fa;
+    }
+    .policy-status-active {
+        color: #198754;
+    }
+    .policy-status-pending {
+        color: #fd7e14;
+    }
+    .policy-status-lapsed {
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Week Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Week:</strong></div>
+                    <div class="col-sm-8">Week {{ week.week_number }} {{ week.year }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Advisor:</strong></div>
+                    <div class="col-sm-8">{{ week.advisor.get_full_name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Period:</strong></div>
+                    <div class="col-sm-8">{{ week.start_date|date:"M d, Y" }} - {{ week.end_date|date:"M d, Y" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Estimated Total:</strong></div>
+                    <div class="col-sm-8">£<span id="estimated-total">{{ week.total_estimated_commission|floatformat:2 }}</span></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Actual Total:</strong></div>
+                    <div class="col-sm-8">£<span id="actual-total">{{ week.total_actual_commission|floatformat:2 }}</span></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Status:</strong></div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-warning">{{ week.status }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Commission Approval</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="approval-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                        <div class="text-danger">{{ form.status.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Manager Notes</label>
+                        {{ form.manager_notes }}
+                        {% if form.manager_notes.errors %}
+                        <div class="text-danger">{{ form.manager_notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Hidden field for total actual commission -->
+                    <input type="hidden" name="total_actual_commission" id="id_total_actual_commission" value="{{ week.total_actual_commission|default:0 }}">
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="action" value="approve" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Approve Commission
+                        </button>
+                        <button type="submit" name="action" value="dispute" class="btn btn-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Mark as Disputed
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Commission Details Table -->
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Insurance Policies</h5>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-info me-2" id="refresh-insurance-data">
+                <i class="bi bi-arrow-repeat"></i> Refresh Insurance Data
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="toggle-all-inputs">
+                <i class="bi bi-pencil"></i> Edit All
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info d-none" id="refresh-status">
+            <i class="bi bi-arrow-repeat spin"></i> Refreshing insurance data...
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover" id="commission-table">
+                <thead>
+                    <tr>
+                        <th>Policy #</th>
+                        <th>Type</th>
+                        <th>Customer</th>
+                        <th>Premium</th>
+                        <th>Status</th>
+                        <th>Commission Rate</th>
+                        <th>Estimated</th>
+                        <th>Actual</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mapping in insurance_mappings %}
+                    <tr data-mapping-id="{{ mapping.id }}" data-policy-id="{{ mapping.insurance_policy.id }}">
+                        <td>{{ mapping.insurance_policy.policy_number }}</td>
+                        <td>{{ mapping.insurance_policy.policy_type }}</td>
+                        <td>{{ mapping.insurance_policy.customer_name }}</td>
+                        <td>£{{ mapping.insurance_policy.premium_amount|floatformat:2 }}</td>
+                        <td>
+                            <span class="policy-status-{{ mapping.insurance_policy.status|lower }}">
+                                <i class="bi 
+                                    {% if mapping.insurance_policy.status == 'ACTIVE' %}bi-check-circle-fill
+                                    {% elif mapping.insurance_policy.status == 'PENDING' %}bi-hourglass-split
+                                    {% else %}bi-x-circle-fill{% endif %}">
+                                </i>
+                                {{ mapping.insurance_policy.status }}
+                            </span>
+                        </td>
+                        <td>{{ mapping.commission_rate }}%</td>
+                        <td>£{{ mapping.estimated_commission|floatformat:2 }}</td>
+                        <td class="actual-commission-cell">
+                            <div class="view-mode">
+                                {% if mapping.actual_commission %}
+                                    £<span class="actual-value">{{ mapping.actual_commission|floatformat:2 }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </div>
+                            <div class="edit-mode d-none">
+                                <div class="input-group input-group-sm commission-input">
+                                    <span class="input-group-text">£</span>
+                                    <input type="number" min="0" step="0.01" 
+                                           class="form-control actual-commission-input" 
+                                           value="{{ mapping.actual_commission|default:'' }}"
+                                           data-estimated="{{ mapping.estimated_commission }}"
+                                           data-mapping-id="{{ mapping.id }}">
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary edit-row">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success save-row d-none">
+                                <i class="bi bi-check"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td colspan="6" class="text-end">Totals:</td>
+                        <td>£{{ week.total_estimated_commission|floatformat:2 }}</td>
+                        <td id="total-actual-cell">£{{ week.total_actual_commission|floatformat:2 }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // Toggle between view and edit mode for a row
+        $('.edit-row').click(function() {
+            const row = $(this).closest('tr');
+            row.find('.view-mode').addClass('d-none');
+            row.find('.edit-mode').removeClass('d-none');
+            row.find('.edit-row').addClass('d-none');
+            row.find('.save-row').removeClass('d-none');
+        });
+        
+        // Save a row's changes
+        $('.save-row').click(function() {
+            const row = $(this).closest('tr');
+            const input = row.find('.actual-commission-input');
+            const newValue = parseFloat(input.val()) || 0;
+            const mappingId = input.data('mapping-id');
+            
+            // Update the view mode display
+            row.find('.actual-value').text(newValue.toFixed(2));
+            
+            // Switch back to view mode
+            row.find('.view-mode').removeClass('d-none');
+            row.find('.edit-mode').addClass('d-none');
+            row.find('.edit-row').removeClass('d-none');
+            row.find('.save-row').addClass('d-none');
+            
+            // Update the total
+            updateTotalActualCommission();
+            
+            // Send AJAX request to save individual commission
+            $.ajax({
+                url: '{% url "update_insurance_commission" %}',
+                method: 'POST',
+                data: {
+                    'mapping_id': mappingId,
+                    'actual_commission': newValue,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        console.log('Commission updated successfully');
+                    } else {
+                        console.error('Error updating commission');
+                    }
+                }
+            });
+        });
+        
+        // Toggle all rows between view and edit mode
+        $('#toggle-all-inputs').click(function() {
+            const isEditing = $(this).hasClass('editing');
+            
+            if (isEditing) {
+                // Save all changes
+                $('.save-row').click();
+                $(this).removeClass('editing');
+                $(this).html('<i class="bi bi-pencil"></i> Edit All');
+            } else {
+                // Enter edit mode for all rows
+                $('.edit-row').click();
+                $(this).addClass('editing');
+                $(this).html('<i class="bi bi-check"></i> Save All');
+            }
+        });
+        
+        // Refresh insurance data
+        $('#refresh-insurance-data').click(function() {
+            const $status = $('#refresh-status');
+            $status.removeClass('d-none');
+            
+            // Get all policy IDs
+            const policyIds = [];
+            $('tr[data-policy-id]').each(function() {
+                policyIds.push($(this).data('policy-id'));
+            });
+            
+            // Request updated insurance data
+            $.ajax({
+                url: '{% url "refresh_insurance_data" %}',
+                method: 'POST',
+                data: {
+                    'policy_ids': policyIds,
+                    'week_id': '{{ week.id }}',
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Update the table with new data
+                        response.updated_policies.forEach(function(policy) {
+                            const row = $(`tr[data-policy-id="${policy.id}"]`);
+                            
+                            // Update policy status
+                            const statusCell = row.find('td:nth-child(5)');
+                            statusCell.html(`
+                                <span class="policy-status-${policy.status.toLowerCase()}">
+                                    <i class="bi ${getStatusIcon(policy.status)}"></i>
+                                    ${policy.status}
+                                </span>
+                            `);
+                            
+                            // Update premium if changed
+                            const premiumCell = row.find('td:nth-child(4)');
+                            premiumCell.text('£' + parseFloat(policy.premium_amount).toFixed(2));
+                            
+                            // Update estimated commission if premium changed
+                            const commissionRate = row.find('td:nth-child(6)').text().replace('%', '');
+                            const estimatedCommission = (policy.premium_amount * commissionRate / 100).toFixed(2);
+                            const estimatedCell = row.find('td:nth-child(7)');
+                            estimatedCell.text('£' + estimatedCommission);
+                            
+                            // Update the input field's data attribute
+                            row.find('.actual-commission-input').data('estimated', estimatedCommission);
+                        });
+                        
+                        // Show success message
+                        showToast('Insurance data refreshed successfully', 'success');
+                    } else {
+                        showToast('Error refreshing insurance data', 'error');
+                    }
+                },
+                complete: function() {
+                    $status.addClass('d-none');
+                }
+            });
+        });
+        
+        // Helper function to get status icon
+        function getStatusIcon(status) {
+            switch(status) {
+                case 'ACTIVE': return 'bi-check-circle-fill';
+                case 'PENDING': return 'bi-hourglass-split';
+                default: return 'bi-x-circle-fill';
+            }
+        }
+        
+        // Show toast notification
+        function showToast(message, type) {
+            // Implement toast notification here
+            alert(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        // Calculate the total actual commission
+        function updateTotalActualCommission() {
+            let total = 0;
+            $('.actual-commission-input').each(function() {
+                const value = parseFloat($(this).val()) || 0;
+                total += value;
+            });
+            
+            // Update the display
+            $('#actual-total').text(total.toFixed(2));
+            $('#total-actual-cell').text('£' + total.toFixed(2));
+            
+            // Update the hidden form field
+            $('#id_total_actual_commission').val(total);
+        }
+        
+        // Update total when any input changes
+        $('.actual-commission-input').on('input', function() {
+            updateTotalActualCommission();
+        });
+        
+        // Initialize the total
+        updateTotalActualCommission();
+    });
+</script>
+{% endblock %}

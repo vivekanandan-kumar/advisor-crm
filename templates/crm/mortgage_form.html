@@ -16,7 +16,7 @@
             <div class="card-body">
                 <form method="post" id="mortgageForm">
                     {% csrf_token %}
-                    
+
                     <!-- Customer & Property Information -->
                     <div class="row mb-4">
                         <div class="col-12">
@@ -24,44 +24,46 @@
                                 <i class="bi bi-house me-2"></i>Property & Customer Information
                             </h5>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
-                            <label for="id_customer" class="form-label">Customer <span class="text-danger">*</span></label>
+                            <label for="id_customer" class="form-label">Customer <span
+                                    class="text-danger">*</span></label>
                             {{ form.customer }}
                             {% if form.customer.errors %}
-                                <div class="text-danger">{{ form.customer.errors }}</div>
+                            <div class="text-danger">{{ form.customer.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_property_type" class="form-label">Property Type</label>
                             {{ form.property_type }}
                         </div>
-                        
+
                         <div class="col-12 mb-3">
-                            <label for="id_property_address" class="form-label">Property Address <span class="text-danger">*</span></label>
+                            <label for="id_property_address" class="form-label">Property Address <span
+                                    class="text-danger">*</span></label>
                             {{ form.property_address }}
                             {% if form.property_address.errors %}
-                                <div class="text-danger">{{ form.property_address.errors }}</div>
+                            <div class="text-danger">{{ form.property_address.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <label for="id_property_city" class="form-label">City</label>
                             {{ form.property_city }}
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <label for="id_property_state" class="form-label">State</label>
                             {{ form.property_state }}
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <label for="id_property_postal_code" class="form-label">Postal Code</label>
                             {{ form.property_postal_code }}
                         </div>
                     </div>
-                    
+
                     <!-- Financial Information -->
                     <div class="row mb-4">
                         <div class="col-12">
@@ -69,54 +71,56 @@
                                 <i class="bi bi-currency-pound me-2"></i>Financial Information
                             </h5>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
-                            <label for="id_property_value" class="form-label">Property Value <span class="text-danger">*</span></label>
+                            <label for="id_property_value" class="form-label">Property Value <span
+                                    class="text-danger">*</span></label>
                             {{ form.property_value }}
                             {% if form.property_value.errors %}
-                                <div class="text-danger">{{ form.property_value.errors }}</div>
+                            <div class="text-danger">{{ form.property_value.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
-                            <label for="id_loan_amount" class="form-label">Loan Amount <span class="text-danger">*</span></label>
+                            <label for="id_loan_amount" class="form-label">Loan Amount <span
+                                    class="text-danger">*</span></label>
                             {{ form.loan_amount }}
                             {% if form.loan_amount.errors %}
-                                <div class="text-danger">{{ form.loan_amount.errors }}</div>
+                            <div class="text-danger">{{ form.loan_amount.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_down_payment" class="form-label">Down Payment</label>
                             {{ form.down_payment }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_interest_rate" class="form-label">Interest Rate</label>
                             {{ form.interest_rate }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_loan_term" class="form-label">Loan Term (years)</label>
                             {{ form.loan_term }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_loan_to_value_ratio" class="form-label">LTV Ratio (%)</label>
                             {{ form.loan_to_value_ratio }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_monthly_payment" class="form-label">Monthly Payment</label>
                             {{ form.monthly_payment }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_broker_fee" class="form-label">Broker Fee</label>
                             {{ form.broker_fee }}
                         </div>
                     </div>
-                    
+
                     <!-- Mortgage Details -->
                     <div class="row mb-4">
                         <div class="col-12">
@@ -124,46 +128,47 @@
                                 <i class="bi bi-gear me-2"></i>Mortgage Details
                             </h5>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
-                            <label for="id_mortgage_type" class="form-label">Mortgage Type <span class="text-danger">*</span></label>
+                            <label for="id_mortgage_type" class="form-label">Mortgage Type <span
+                                    class="text-danger">*</span></label>
                             {{ form.mortgage_type }}
                             {% if form.mortgage_type.errors %}
-                                <div class="text-danger">{{ form.mortgage_type.errors }}</div>
+                            <div class="text-danger">{{ form.mortgage_type.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_lender" class="form-label">Lender</label>
                             {{ form.lender }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_purpose" class="form-label">Purpose</label>
                             {{ form.purpose }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_mortgage_status" class="form-label">Status</label>
                             {{ form.mortgage_status }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_application_date" class="form-label">Application Date</label>
                             {{ form.application_date }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_completion_date" class="form-label">Completion Date</label>
                             {{ form.completion_date }}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="id_next_review_date" class="form-label">Next Review Date</label>
                             {{ form.next_review_date }}
                         </div>
                     </div>
-                    
+
                     <!-- Notes Section -->
                     <div class="row mb-4">
                         <div class="col-12">
@@ -171,13 +176,13 @@
                                 <i class="bi bi-journal-text me-2"></i>Additional Information
                             </h5>
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="id_notes" class="form-label">Notes</label>
                             {{ form.notes }}
                         </div>
                     </div>
-                    
+
                     <!-- Form Actions -->
                     <div class="row">
                         <div class="col-12">
@@ -197,56 +202,56 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Form validation
         const mortgageForm = document.getElementById('mortgageForm');
         if (mortgageForm) {
-            mortgageForm.addEventListener('submit', function(e) {
+            mortgageForm.addEventListener('submit', function (e) {
                 const customer = document.getElementById('id_customer');
                 const propertyValue = document.getElementById('id_property_value');
                 const loanAmount = document.getElementById('id_loan_amount');
                 const mortgageType = document.getElementById('id_mortgage_type');
                 const propertyAddress = document.getElementById('id_property_address');
-                
+
                 if (customer && !customer.value) {
                     e.preventDefault();
                     alert('Please select a customer.');
                     customer.focus();
                     return false;
                 }
-                
+
                 if (propertyValue && (!propertyValue.value || parseFloat(propertyValue.value) <= 0)) {
                     e.preventDefault();
                     alert('Please enter a valid property value.');
                     propertyValue.focus();
                     return false;
                 }
-                
+
                 if (loanAmount && (!loanAmount.value || parseFloat(loanAmount.value) <= 0)) {
                     e.preventDefault();
                     alert('Please enter a valid loan amount.');
                     loanAmount.focus();
                     return false;
                 }
-                
+
                 if (mortgageType && !mortgageType.value) {
                     e.preventDefault();
                     alert('Please select a mortgage type.');
                     mortgageType.focus();
                     return false;
                 }
-                
+
                 if (propertyAddress && !propertyAddress.value.trim()) {
                     e.preventDefault();
                     alert('Please enter a property address.');
                     propertyAddress.focus();
                     return false;
                 }
-                
+
                 if (propertyValue && loanAmount) {
                     const propVal = parseFloat(propertyValue.value);
                     const loanAmt = parseFloat(loanAmount.value);
-                    
+
                     if (loanAmt > propVal) {
                         e.preventDefault();
                         alert('Loan amount cannot exceed property value.');
@@ -256,26 +261,41 @@
                 }
             });
         }
-        
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Form validation
+            const mortgageForm = document.getElementById('mortgageForm');
+            if (mortgageForm) {
+                mortgageForm.addEventListener('submit', function (e) {
+                    // Your existing validation code...
+
+                    // Make sure we're not creating an application
+                    console.log('Submitting mortgage form - no application should be created');
+                });
+            }
+
+            // Remove any code that might create applications
+        });
+
         // Auto-calculate LTV ratio
         const propertyValueField = document.getElementById('id_property_value');
         const loanAmountField = document.getElementById('id_loan_amount');
         const ltvField = document.getElementById('id_loan_to_value_ratio');
-        
+
         function calculateLTV() {
-            if (propertyValueField && propertyValueField.value && 
-                loanAmountField && loanAmountField.value && 
+            if (propertyValueField && propertyValueField.value &&
+                loanAmountField && loanAmountField.value &&
                 ltvField) {
                 const propVal = parseFloat(propertyValueField.value);
                 const loanAmt = parseFloat(loanAmountField.value);
-                
+
                 if (propVal > 0) {
                     const ltv = (loanAmt / propVal) * 100;
                     ltvField.value = ltv.toFixed(2);
                 }
             }
         }
-        
+
         if (propertyValueField && loanAmountField) {
             propertyValueField.addEventListener('change', calculateLTV);
             loanAmountField.addEventListener('change', calculateLTV);

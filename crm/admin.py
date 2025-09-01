@@ -1,7 +1,7 @@
 # crm/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Advisor
+from .models import Advisor, DailyAdvisorActivity
 
 # Custom admin actions
 def make_active(modeladmin, request, queryset):
@@ -43,3 +43,16 @@ class AdvisorAdmin(UserAdmin):
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),
     )
+
+class DailyAdvisorActivityAdmin(admin.ModelAdmin):
+    list_display = ['advisor', 'date', 'calls_made', 'policies_sold', 'total_premium', 'mortgages']
+    list_filter = ['date', 'advisor']
+    search_fields = ['advisor__first_name', 'advisor__last_name']
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if not request.user.is_superuser:
+            qs = qs.filter(advisor=request.user)
+        return qs
+
+admin.site.register(DailyAdvisorActivity, DailyAdvisorActivityAdmin)

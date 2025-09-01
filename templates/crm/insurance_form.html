@@ -198,122 +198,58 @@
 </div>
 
 {% block extra_js %}
+<!-- Add this script to the bottom of insurance_form.html -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Form validation
-        const insuranceForm = document.getElementById('insuranceForm');
-        if (insuranceForm) {
-            insuranceForm.addEventListener('submit', function(e) {
-                const customer = document.getElementById('id_customer');
-                const policyType = document.getElementById('id_policy_type');
-                const insuranceCompany = document.getElementById('id_insurance_company');
-                const coverageAmount = document.getElementById('id_coverage_amount');
-                const premiumAmount = document.getElementById('id_premium_amount');
-                const premiumFrequency = document.getElementById('id_premium_frequency');
-                const policyStartDate = document.getElementById('id_policy_start_date');
-                const policyStatus = document.getElementById('id_policy_status');
-                
-                if (customer && !customer.value) {
-                    e.preventDefault();
-                    alert('Please select a customer.');
-                    customer.focus();
-                    return false;
-                }
-                
-                if (policyType && !policyType.value) {
-                    e.preventDefault();
-                    alert('Please select a policy type.');
-                    policyType.focus();
-                    return false;
-                }
-                
-                if (insuranceCompany && !insuranceCompany.value.trim()) {
-                    e.preventDefault();
-                    alert('Please enter an insurance company.');
-                    insuranceCompany.focus();
-                    return false;
-                }
-                
-                if (coverageAmount && (!coverageAmount.value || parseFloat(coverageAmount.value) <= 0)) {
-                    e.preventDefault();
-                    alert('Please enter a valid coverage amount.');
-                    coverageAmount.focus();
-                    return false;
-                }
-                
-                if (premiumAmount && (!premiumAmount.value || parseFloat(premiumAmount.value) <= 0)) {
-                    e.preventDefault();
-                    alert('Please enter a valid premium amount.');
-                    premiumAmount.focus();
-                    return false;
-                }
-                
-                if (premiumFrequency && !premiumFrequency.value) {
-                    e.preventDefault();
-                    alert('Please select a premium frequency.');
-                    premiumFrequency.focus();
-                    return false;
-                }
-                
-                if (policyStartDate && !policyStartDate.value) {
-                    e.preventDefault();
-                    alert('Please select a policy start date.');
-                    policyStartDate.focus();
-                    return false;
-                }
-                
-                if (policyStatus && !policyStatus.value) {
-                    e.preventDefault();
-                    alert('Please select a policy status.');
-                    policyStatus.focus();
-                    return false;
-                }
-            });
-        }
-        
-        // Auto-calculate commission amount
-        const coverageAmountField = document.getElementById('id_coverage_amount');
-        const commissionRateField = document.getElementById('id_commission_rate');
-        const commissionAmountField = document.getElementById('id_commission_amount');
-        
-        function calculateCommission() {
-            if (coverageAmountField && coverageAmountField.value && 
-                commissionRateField && commissionRateField.value && 
-                commissionAmountField) {
-                const coverage = parseFloat(coverageAmountField.value);
-                const rate = parseFloat(commissionRateField.value);
-                
-                if (coverage > 0 && rate > 0) {
-                    const commission = (coverage * rate) / 100;
-                    commissionAmountField.value = commission.toFixed(2);
-                }
-            }
-        }
-        
-        if (coverageAmountField && commissionRateField) {
-            coverageAmountField.addEventListener('change', calculateCommission);
-            commissionRateField.addEventListener('change', calculateCommission);
-            coverageAmountField.addEventListener('input', calculateCommission);
-            commissionRateField.addEventListener('input', calculateCommission);
-        }
-        
-        // Set default values for new policies
-        {% if not form.instance.pk %}
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set default policy status to 'Quote' for new policies
-            const policyStatusField = document.getElementById('id_policy_status');
-            if (policyStatusField && !policyStatusField.value) {
-                policyStatusField.value = 'Quote';
-            }
-            
-            // Set default premium frequency to 'Monthly'
-            const premiumFrequencyField = document.getElementById('id_premium_frequency');
-            if (premiumFrequencyField && !premiumFrequencyField.value) {
-                premiumFrequencyField.value = 'Monthly';
-            }
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const insuranceForm = document.getElementById('insuranceForm');
+    if (insuranceForm) {
+        insuranceForm.addEventListener('submit', function(e) {
+            // Your existing validation code...
         });
-        {% endif %}
-    });
+    }
+    
+    // Auto-calculate commission amount
+    const coverageAmountField = document.getElementById('id_coverage_amount');
+    const commissionRateField = document.getElementById('id_commission_rate');
+    const commissionAmountField = document.getElementById('id_commission_amount');
+    
+    function calculateCommission() {
+        if (coverageAmountField && coverageAmountField.value && 
+            commissionRateField && commissionRateField.value && 
+            commissionAmountField) {
+            const coverage = parseFloat(coverageAmountField.value);
+            const rate = parseFloat(commissionRateField.value);
+            
+            if (coverage > 0 && rate > 0) {
+                const commission = (coverage * rate) / 100;
+                commissionAmountField.value = commission.toFixed(2);
+            }
+        }
+    }
+    
+    if (coverageAmountField && commissionRateField) {
+        coverageAmountField.addEventListener('change', calculateCommission);
+        commissionRateField.addEventListener('change', calculateCommission);
+        coverageAmountField.addEventListener('input', calculateCommission);
+        commissionRateField.addEventListener('input', calculateCommission);
+    }
+    
+    // Set default values for new policies
+    {% if not form.instance.pk %}
+    // Set default policy status to 'Quote' for new policies
+    const policyStatusField = document.getElementById('id_policy_status');
+    if (policyStatusField && !policyStatusField.value) {
+        policyStatusField.value = 'Quote';
+    }
+    
+    // Set default premium frequency to 'Monthly'
+    const premiumFrequencyField = document.getElementById('id_premium_frequency');
+    if (premiumFrequencyField && !premiumFrequencyField.value) {
+        premiumFrequencyField.value = 'Monthly';
+    }
+    {% endif %}
+});
 </script>
 {% endblock %}
 {% endblock %}

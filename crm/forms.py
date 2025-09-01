@@ -6,7 +6,7 @@ from datetime import date
 import datetime
 from .models import (
     Customer, Mortgage, InsurancePolicy, Application, 
-    Communication, Document, Commission, Advisor,Payment,CommissionWeek,CommissionApplicationMapping,CommissionMapping
+    Communication, Document, Commission, Advisor,Payment,CommissionWeek,CommissionMapping
 )
 
 # forms.py
@@ -174,6 +174,19 @@ class InsurancePolicyForm(forms.ModelForm):
             'automatic_renewal': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'notes': Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
+    def form_valid(self, form):
+        insurance_policy = form.save(commit=False)
+
+        # Update related applications if needed
+        related_applications = Application.objects.filter(insurance=insurance_policy)
+        for application in related_applications:
+            # Update application fields based on insurance changes
+            if 'policy_status' in form.changed_data:
+                application.application_status = insurance_policy.policy_status
+                application.save()
+
+        messages.success(self.request, 'Insurance policy updated successfully!')
+        return super().form_valid(form)
 
 # forms.py - ApplicationForm
 
@@ -236,20 +249,26 @@ class CommunicationForm(forms.ModelForm):
         self.fields['application'].required = False
         self.fields['application'].empty_label = "Select Application (if applicable)"
 
+# In forms.py
 class DocumentForm(forms.ModelForm):
     class Meta:
         model = Document
-        exclude = ['document_id', 'application', 'customer', 'uploaded_by', 'created_at', 'updated_at']
+        fields = [
+            'document_name', 'document_type', 'document_file', 
+            'document_status', 'requested_date', 'notes', 'application'
+        ]
         widgets = {
-            'document_type': Select(attrs={'class': 'form-control'}),
-            'document_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'file_path': forms.TextInput(attrs={'class': 'form-control'}),
-            'document_status': Select(attrs={'class': 'form-control'}),
-            'requested_date': DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'received_date': DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'expiry_date': DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'notes': Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'requested_date': forms.DateInput(attrs={'type': 'date'}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+            'application': forms.HiddenInput(), 
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['document_name'].required = True
+        self.fields['document_type'].required = True
+        self.fields['document_status'].required = True
+        self.fields['application'].required = False
 
 class ApplicationStatusUpdateForm(forms.Form):
     STATUS_CHOICES = Application.STATUS_CHOICES
@@ -324,54 +343,50 @@ class PaymentForm(forms.ModelForm):
         }
 
 
+# forms.py - Update CommissionWeekForm
 class CommissionWeekForm(forms.ModelForm):
     class Meta:
         model = CommissionWeek
-        fields = ['week_number', 'year', 'start_date', 'end_date', 'advisor', 'status', 'notes']
-    
-    def clean_week_number(self):
-        week_number = self.cleaned_data['week_number']
-        if week_number < 1 or week_number > 53:
-            raise forms.ValidationError('Week number must be between 1 and 53')
-        return week_number
-    
-    def clean_year(self):
-        year = self.cleaned_data['year']
-        current_year = date.today().year
-        if year < current_year:
-            raise forms.ValidationError('Cannot create commission weeks for past years')
-        return year
+        fields = ['advisor', 'week_number', 'year', 'start_date', 'end_date', 'status', 
+                 'total_estimated_commission', 'total_actual_commission', 'notes']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
+        }
     
     def clean(self):
         cleaned_data = super().clean()
+        advisor = cleaned_data.get('advisor')
         week_number = cleaned_data.get('week_number')
         year = cleaned_data.get('year')
-        start_date = cleaned_data.get('start_date')
-        end_date = cleaned_data.get('end_date')
         
-        if week_number and year and start_date and end_date:
-            # Validate that dates match the week number
-            expected_start = date.fromisocalendar(year, week_number, 1)
-            expected_end = date.fromisocalendar(year, week_number, 7)
+        if advisor and week_number and year:
+            # Check for duplicate week for the same advisor and year
+            existing_weeks = CommissionWeek.objects.filter(
+                advisor=advisor,
+                week_number=week_number,
+                year=year
+            )
             
-            if start_date != expected_start:
-                self.add_error('start_date', f'Start date should be {expected_start} for week {week_number}')
-            if end_date != expected_end:
-                self.add_error('end_date', f'End date should be {expected_end} for week {week_number}')
+            if self.instance.pk:
+                existing_weeks = existing_weeks.exclude(pk=self.instance.pk)
+            
+            if existing_weeks.exists():
+                raise forms.ValidationError(
+                    f"Week {week_number} for year {year} already exists for this advisor."
+                )
         
         return cleaned_data
 
-class CommissionApplicationMappingForm(forms.ModelForm):
+class CommissionMappingForm(forms.ModelForm):
     class Meta:
-        model = CommissionApplicationMapping
-        exclude = ['mapping_id', 'created_at', 'updated_at']
+        model = CommissionMapping
+        fields = ['commission_rate', 'estimated_commission', 'actual_commission', 'notes']
         widgets = {
-            'application': Select(attrs={'class': 'form-control'}),
-            'commission_week': Select(attrs={'class': 'form-control'}),
+            'commission_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'estimated_commission': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'actual_commission': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'commission_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'notes': Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
 class CommissionMappingForm(forms.ModelForm):
@@ -382,3 +397,21 @@ class CommissionMappingForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
+class CommissionWeekApprovalForm(forms.ModelForm):
+    class Meta:
+        model = CommissionWeek
+        fields = ['status', 'manager_notes']
+        widgets = {
+            'status': forms.Select(choices=CommissionWeek.STATUS_CHOICES),
+            'manager_notes': forms.Textarea(attrs={'rows': 4}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show approval-related status options for managers
+        self.fields['status'].choices = [
+            ('Pending Review', 'Pending Review'),
+            ('Approved', 'Approved'),
+            ('Disputed', 'Disputed'),
+            ('Paid', 'Paid')
+        ]

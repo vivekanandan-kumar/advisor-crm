@@ -1,0 +1,878 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+
+{% block title %}Commission Report - Pinnacle Financial Solutions{% endblock %}
+
+{% block page_title %}Commission Report & Payment Tracking{% endblock %}
+
+{% block page_specific_actions %}
+<div class="d-flex gap-2">
+    <a href="{% url 'commission_week_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> New Week
+    </a>
+    {% if user.is_manager %}
+    <a href="{% url 'auto_assign_applications' %}" class="btn btn-success">
+        <i class="bi bi-magic me-1"></i> Auto Assign
+    </a>
+    {% endif %}
+    <button class="btn btn-outline-secondary" id="exportBtn">
+        <i class="bi bi-download me-1"></i> Export
+    </button>
+</div>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Commission Report</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card summary-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1">Estimated Commission</p>
+                            <h4 class="mb-0">£{{ total_estimated|floatformat:2 }}</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-currency-pound text-primary fs-1"></i>
+                        </div>
+                    </div>
+                    <p class="text-success small mt-2"><i class="bi bi-arrow-up"></i> {{ estimated_growth }}% from last week</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card summary-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1">Actual Commission</p>
+                            <h4 class="mb-0">£{{ total_actual|floatformat:2 }}</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-receipt text-success fs-1"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-2">{{ completed_applications }} applications processed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card summary-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1">Variance</p>
+                            <h4 class="mb-0">£{{ variance|floatformat:2 }}</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-graph-up text-warning fs-1"></i>
+                        </div>
+                    </div>
+                    <p class="text-danger small mt-2"><i class="bi bi-arrow-down"></i> {{ variance_percentage }}% variance</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card summary-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1">Pending Approval</p>
+                            <h4 class="mb-0">£{{ pending_approval|floatformat:2 }}</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-clock-history text-info fs-1"></i>
+                        </div>
+                    </div>
+                    <p class="text-info small mt-2">{{ pending_count }} applications pending</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Week Selector and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="week-selector mb-3">
+                        <span class="fw-bold me-3">Week:</span>
+                        {% for week in available_weeks %}
+                        <a href="?week={{ week.week_number }}&year={{ week.year }}" class="week-btn {% if week.week_number == selected_week and week.year == selected_year %}active{% endif %}">
+                            {{ week.week_number }}
+                        </a>
+                        {% endfor %}
+                        <span class="ms-2 text-muted">{{ week_dates }}</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Disputed">Disputed</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-secondary" id="applyFilters">
+                            <i class="bi bi-funnel"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="commissionTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="weeks-tab" data-bs-toggle="tab" data-bs-target="#weeks" type="button" role="tab">
+                <i class="bi bi-calendar-week me-1"></i> Commission Weeks
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="report-tab" data-bs-toggle="tab" data-bs-target="#report" type="button" role="tab">
+                <i class="bi bi-graph-up me-1"></i> Commission Report
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications" type="button" role="tab">
+                <i class="bi bi-file-text me-1"></i> Applications
+            </button>
+        </li>
+        {% if user.is_manager %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
+                <i class="bi bi-credit-card me-1"></i> Payments
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="auto-assign-tab" data-bs-toggle="tab" data-bs-target="#auto-assign" type="button" role="tab">
+                <i class="bi bi-magic me-1"></i> Auto Assign
+            </button>
+        </li>
+        {% endif %}
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="commissionTabContent">
+        <!-- Commission Weeks Tab -->
+        <div class="tab-pane fade show active" id="weeks" role="tabpanel">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Commission Weeks</h5>
+                    <button class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-paper-plane me-1"></i> Submit for Approval
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 commission-table">
+                            <thead>
+                                <tr>
+                                    <th>Week</th>
+                                    <th>Advisor</th>
+                                    <th>Period</th>
+                                    <th>Estimated</th>
+                                    <th>Actual</th>
+                                    <th>Variance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for week in commission_weeks %}
+                                <tr class="commission-row {% if week.status == 'Paid' %}paid{% elif week.status == 'Pending Review' %}pending{% elif week.status == 'Open' %}info{% endif %}">
+                                    <td>Week {{ week.week_number }}</td>
+                                    <td>{{ week.advisor.get_full_name }}</td>
+                                    <td>{{ week.start_date|date:"M d" }} - {{ week.end_date|date:"M d" }}</td>
+                                    <td>£{{ week.total_estimated_commission|floatformat:2 }}</td>
+                                    <td>£{{ week.total_actual_commission|floatformat:2 }}</td>
+                                    <td>
+                                        {% with variance=week.total_estimated_commission|add:"-"|add:week.total_actual_commission %}
+                                        <span class="{% if variance > 0 %}text-danger{% elif variance < 0 %}text-success{% endif %}">
+                                            £{{ variance|floatformat:2 }}
+                                        </span>
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if week.status == 'Paid' %}success{% elif week.status == 'Pending Review' %}warning{% elif week.status == 'Open' %}info{% else %}primary{% endif %}">
+                                            {{ week.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'commission_week_detail' week.pk %}" class="btn btn-sm btn-info">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if user.is_manager %}
+                                        <a href="{% url 'commission_week_update' week.pk %}" class="btn btn-sm btn-warning">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">No commission weeks found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commission Report Tab -->
+        <div class="tab-pane fade" id="report" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Weekly Commission Report</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Commission Breakdown</h6>
+                                    <canvas id="commissionChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Performance Metrics</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Conversion Rate</label>
+                                        <div class="progress mb-2" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ conversion_rate }}%">{{ conversion_rate }}%</div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Commission Efficiency</label>
+                                        <div class="progress mb-2" style="height: 20px;">
+                                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ commission_efficiency }}%">{{ commission_efficiency }}%</div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Payment Processing</label>
+                                        <div class="progress mb-2" style="height: 20px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ payment_processing }}%">{{ payment_processing }}%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Commission Summary</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Product Type</th>
+                                            <th>Applications</th>
+                                            <th>Total Premium</th>
+                                            <th>Commission Rate</th>
+                                            <th>Commission Earned</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for product in product_summary %}
+                                        <tr>
+                                            <td>{{ product.type }}</td>
+                                            <td>{{ product.count }}</td>
+                                            <td>£{{ product.premium|floatformat:2 }}</td>
+                                            <td>{{ product.rate }}%</td>
+                                            <td>£{{ product.commission|floatformat:2 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="fw-bold">
+                                        <tr>
+                                            <td>Total</td>
+                                            <td>{{ total_applications }}</td>
+                                            <td>£{{ total_premium|floatformat:2 }}</td>
+                                            <td>-</td>
+                                            <td>£{{ total_commission|floatformat:2 }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications Tab -->
+        <div class="tab-pane fade" id="applications" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Commission Applications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Application Status</h6>
+                                    <canvas id="applicationStatusChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Quick Actions</h6>
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'application_create' %}" class="btn btn-primary">
+                                            <i class="bi bi-plus-circle me-2"></i> New Application
+                                        </a>
+                                        <button class="btn btn-outline-primary">
+                                            <i class="bi bi-upload me-2"></i> Bulk Upload
+                                        </button>
+                                        <button class="btn btn-outline-primary">
+                                            <i class="bi bi-filter me-2"></i> Filter Applications
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Application #</th>
+                                            <th>Client</th>
+                                            <th>Product</th>
+                                            <th>Premium/Amount</th>
+                                            <th>Commission Rate</th>
+                                            <th>Estimated</th>
+                                            <th>Actual</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for app in commission_applications %}
+                                        <tr class="commission-row {{ app.status_class }}">
+                                            <td>{{ app.application_number }}</td>
+                                            <td>{{ app.customer_name }}</td>
+                                            <td>{{ app.product_type }}</td>
+                                            <td>£{{ app.amount|floatformat:2 }}</td>
+                                            <td>{{ app.commission_rate }}%</td>
+                                            <td>£{{ app.estimated|floatformat:2 }}</td>
+                                            <td>
+                                                {% if app.actual %}
+                                                    £{{ app.actual|floatformat:2 }}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
+                                            <td><span class="badge bg-{{ app.status_color }}">{{ app.status }}</span></td>
+                                            <td>
+                                                <a href="{% url 'application_detail' app.id %}" class="btn btn-sm btn-light action-btn">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="9" class="text-center py-4">No commission applications found.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payments Tab (Manager Only) -->
+        {% if user.is_manager %}
+        <div class="tab-pane fade" id="payments" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Payment Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Payment Status</h6>
+                                    <canvas id="paymentStatusChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Quick Actions</h6>
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'payment_create' %}" class="btn btn-success">
+                                            <i class="bi bi-plus-circle me-2"></i> New Payment
+                                        </a>
+                                        <button class="btn btn-outline-primary">
+                                            <i class="bi bi-upload me-2"></i> Bulk Payment Upload
+                                        </button>
+                                        <button class="btn btn-outline-primary">
+                                            <i class="bi bi-filter me-2"></i> Filter Payments
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Payment ID</th>
+                                            <th>Customer</th>
+                                            <th>Amount</th>
+                                            <th>Method</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for payment in payments %}
+                                        <tr>
+                                            <td>{{ payment.payment_id }}</td>
+                                            <td>{{ payment.customer.first_name }} {{ payment.customer.last_name }}</td>
+                                            <td>£{{ payment.amount|floatformat:2 }}</td>
+                                            <td>{{ payment.payment_method }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if payment.payment_status == 'Completed' %}success{% elif payment.payment_status == 'Pending' %}warning{% elif payment.payment_status == 'Failed' %}danger{% else %}info{% endif %}">
+                                                    {{ payment.payment_status }}
+                                                </span>
+                                            </td>
+                                            <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'payment_detail' payment.pk %}" class="btn btn-sm btn-info">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'payment_update' payment.pk %}" class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="7" class="text-center py-4">No payments found.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auto Assign Tab (Manager Only) -->
+        <div class="tab-pane fade" id="auto-assign" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Auto Assign Applications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i> This feature automatically assigns eligible applications to commission weeks based on their status and completion date.
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Assignment Criteria</h6>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="criteria1" checked>
+                                        <label class="form-check-label" for="criteria1">
+                                            Applications with "Approved" status
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="criteria2" checked>
+                                        <label class="form-check-label" for="criteria2">
+                                            Applications completed in the last 30 days
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="criteria3">
+                                        <label class="form-check-label" for="criteria3">
+                                            Include applications with "Under Review" status
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="criteria4">
+                                        <label class="form-check-label" for="criteria4">
+                                            Exclude applications with disputes
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Assignment Preview</h6>
+                                    <p class="small text-muted">Based on your criteria, the following assignments will be made:</p>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            {{ mortgage_count }} Mortgage Applications
+                                            <span class="badge bg-primary rounded-pill">Week {{ current_week }}</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            {{ insurance_count }} Insurance Policies
+                                            <span class="badge bg-primary rounded-pill">Week {{ current_week }}</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            {{ renewal_count }} Renewals
+                                            <span class="badge bg-primary rounded-pill">Week {{ next_week }}</span>
+                                        </li>
+                                    </ul>
+                                    <a href="{% url 'auto_assign_applications' %}" class="btn btn-success w-100 mt-3">
+                                        <i class="bi bi-magic me-2"></i> Run Auto Assignment
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Recent Assignment History</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Assigned By</th>
+                                            <th>Applications</th>
+                                            <th>Week</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for assignment in assignment_history %}
+                                        <tr>
+                                            <td>{{ assignment.date|date:"M d, Y" }}</td>
+                                            <td>{{ assignment.assigned_by }}</td>
+                                            <td>{{ assignment.application_count }} applications</td>
+                                            <td>Week {{ assignment.week }}</td>
+                                            <td><span class="badge bg-success">Completed</span></td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4">No assignment history found.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Comment Modal -->
+<div class="modal fade" id="commentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Comment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Application</label>
+                    <input type="text" class="form-control" value="APP-CI-10237 - Robert Brown" disabled>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Comment Type</label>
+                    <select class="form-select">
+                        <option>General Note</option>
+                        <option>Commission Dispute</option>
+                        <option>Payment Issue</option>
+                        <option>Application Query</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Comment</label>
+                    <textarea class="form-control" rows="4" placeholder="Enter your comment or issue here..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Attachment (Optional)</label>
+                    <input type="file" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary">Submit Comment</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize charts with real data
+        const commissionCtx = document.getElementById('commissionChart').getContext('2d');
+        const commissionChart = new Chart(commissionCtx, {
+            type: 'bar',
+            data: {
+                labels: [{% for product in product_summary %}'{{ product.type }}',{% endfor %}],
+                datasets: [{
+                    label: 'Commission Earned (£)',
+                    data: [{% for product in product_summary %}{{ product.commission }},{% endfor %}],
+                    backgroundColor: [
+                        'rgba(30, 64, 175, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(5, 150, 105, 0.7)',
+                        'rgba(16, 185, 129, 0.7)',
+                        'rgba(139, 92, 246, 0.7)',
+                        'rgba(236, 72, 153, 0.7)',
+                        'rgba(249, 115, 22, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgb(30, 64, 175)',
+                        'rgb(59, 130, 246)',
+                        'rgb(5, 150, 105)',
+                        'rgb(16, 185, 129)',
+                        'rgb(139, 92, 246)',
+                        'rgb(236, 72, 153)',
+                        'rgb(249, 115, 22)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+
+        const statusCtx = document.getElementById('applicationStatusChart').getContext('2d');
+        const statusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Paid', 'Pending', 'Submitted', 'Disputed'],
+                datasets: [{
+                    data: [{{ paid_count }}, {{ pending_count }}, {{ submitted_count }}, {{ disputed_count }}],
+                    backgroundColor: [
+                        'rgba(5, 150, 105, 0.7)',
+                        'rgba(245, 158, 11, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(239, 68, 68, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgb(5, 150, 105)',
+                        'rgb(245, 158, 11)',
+                        'rgb(59, 130, 246)',
+                        'rgb(239, 68, 68)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+
+        // Payment status chart
+        const paymentCtx = document.getElementById('paymentStatusChart').getContext('2d');
+        const paymentChart = new Chart(paymentCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Completed', 'Pending', 'Failed', 'Processing'],
+                datasets: [{
+                    data: [{{ payment_completed }}, {{ payment_pending }}, {{ payment_failed }}, {{ payment_processing }}],
+                    backgroundColor: [
+                        'rgba(5, 150, 105, 0.7)',
+                        'rgba(245, 158, 11, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(59, 130, 246, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgb(5, 150, 105)',
+                        'rgb(245, 158, 11)',
+                        'rgb(239, 68, 68)',
+                        'rgb(59, 130, 246)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+
+        // Export functionality
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const tabName = document.querySelector('.nav-link.active').textContent.trim();
+            alert(`Exporting ${tabName} data...`);
+            // In a real implementation, this would generate a CSV or PDF
+        });
+
+        // Filter functionality
+        document.getElementById('applyFilters').addEventListener('click', function() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            // Apply filters and reload data
+            console.log(`Applying status filter: ${statusFilter}`);
+            // In a real implementation, this would reload the data with the applied filters
+        });
+
+        // Highlight table rows on click
+        const rows = document.querySelectorAll('.commission-row');
+        rows.forEach(row => {
+            row.addEventListener('click', function() {
+                rows.forEach(r => r.classList.remove('table-active'));
+                this.classList.add('table-active');
+            });
+        });
+    });
+</script>
+
+<style>
+    .summary-card {
+        transition: all 0.3s ease;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .week-selector {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .week-btn {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        color: #495057;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .week-btn.active {
+        background-color: #1e40af;
+        color: white;
+    }
+
+    .commission-table th {
+        background-color: #f8f9fa;
+    }
+
+    .commission-row {
+        transition: background-color 0.2s;
+        cursor: pointer;
+    }
+
+    .commission-row:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    .commission-row.paid {
+        background-color: #f0fff4;
+    }
+
+    .commission-row.pending {
+        background-color: #fff4e6;
+    }
+
+    .commission-row.info {
+        background-color: #e8f4fd;
+    }
+
+    .commission-row.disputed {
+        background-color: #ffeaea;
+    }
+
+    .commission-row.table-active {
+        background-color: #cce5ff !important;
+    }
+
+    .action-btn {
+        padding: 5px 8px;
+        font-size: 12px;
+        border-radius: 4px;
+    }
+
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #495057;
+        font-weight: 500;
+        padding: 12px 20px;
+    }
+
+    .nav-tabs .nav-link.active {
+        border-bottom: 3px solid #1e40af;
+        color: #1e40af;
+        background-color: transparent;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        color: #1e40af;
+    }
+</style>
+{% endblock %}

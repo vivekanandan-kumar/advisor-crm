@@ -1,30 +1,33 @@
 {% extends 'crm/base.html' %}
 {% load static %}
 
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">Commission Weeks</li>
+{% endblock %}
+
+{% block page_title %}Commission Weeks{% endblock %}
+
+{% block page_specific_actions %}
+    <a href="{% url 'commission_week_create' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-circle me-1"></i> New Week
+    </a>
+    <a href="{% url 'auto_assign_applications' %}" class="btn btn-success btn-sm">
+        <i class="bi bi-magic me-1"></i> Auto Assign
+    </a>
+{% endblock %}
+
 {% block content %}
     <div class="container-fluid">
-        <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Commission Weeks</h1>
-            <div>
-                <a href="{% url 'commission_week_create' %}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus fa-sm"></i> New Week
-                </a>
-                <a href="{% url 'auto_assign_applications' %}" class="btn btn-success btn-sm">
-                    <i class="fas fa-magic fa-sm"></i> Auto Assign
-                </a>
-            </div>
-        </div>
-
         <!-- Filter Form -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        <div class="card enhanced-card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Filters</h5>
             </div>
             <div class="card-body">
-                <form method="get" class="form-inline">
-                    <div class="form-group mr-3 mb-2">
-                        <label for="advisor" class="mr-2">Advisor:</label>
-                        <select name="advisor" id="advisor" class="form-control form-control-sm">
+                <form method="get" class="row g-3 align-items-center">
+                    <div class="col-md-3">
+                        <label for="advisor" class="form-label">Advisor:</label>
+                        <select name="advisor" id="advisor" class="form-select">
                             <option value="">All Advisors</option>
                             {% for advisor in advisors %}
                                 <option value="{{ advisor.id }}"
@@ -34,9 +37,9 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-group mr-3 mb-2">
-                        <label for="status" class="mr-2">Status:</label>
-                        <select name="status" id="status" class="form-control form-control-sm">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status:</label>
+                        <select name="status" id="status" class="form-select">
                             <option value="">All Statuses</option>
                             {% for value, label in status_choices %}
                                 <option value="{{ value }}"
@@ -44,9 +47,9 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-group mr-3 mb-2">
-                        <label for="year" class="mr-2">Year:</label>
-                        <select name="year" id="year" class="form-control form-control-sm">
+                    <div class="col-md-3">
+                        <label for="year" class="form-label">Year:</label>
+                        <select name="year" id="year" class="form-select">
                             <option value="">All Years</option>
                             {% for year in years %}
                                 <option value="{{ year }}"
@@ -54,20 +57,22 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm mb-2">Apply Filters</button>
-                    <a href="{% url 'commission_weeks' %}" class="btn btn-secondary btn-sm mb-2 ml-2">Clear</a>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
+                        <a href="{% url 'commission_weeks' %}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
                 </form>
             </div>
         </div>
 
         <!-- Commission Weeks Table -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Commission Weeks</h6>
+        <div class="card enhanced-card">
+            <div class="card-header">
+                <h5 class="mb-0">Commission Weeks</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <table class="table table-hover enhanced-table" width="100%" cellspacing="0">
                         <thead>
                         <tr>
                             <th>Week</th>
@@ -88,21 +93,32 @@
                                 <td>£{{ week.total_estimated_commission|floatformat:2 }}</td>
                                 <td>£{{ week.total_actual_commission|floatformat:2 }}</td>
                                 <td>
-                                <span class="badge badge-{% if week.status == 'Paid' %}success{% elif week.status == 'Pending Review' %}warning{% elif week.status == 'Open' %}info{% else %}primary{% endif %}">
-                                    {{ week.status }}
-                                </span>
+                                    {% if week.status == 'Paid' %}
+                                        <span class="badge bg-success">{{ week.status }}</span>
+                                    {% elif week.status == 'Pending Review' %}
+                                        <span class="badge bg-warning">{{ week.status }}</span>
+                                    {% elif week.status == 'Open' %}
+                                        <span class="badge bg-info">{{ week.status }}</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">{{ week.status }}</span>
+                                    {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{% url 'commission_week_detail' week.pk %}" class="btn btn-sm btn-info">View</a>
-                                    {% if user.is_manager and week %}
-                                        <a href="{% url 'commission_week_update' week.pk %}"
-                                           class="btn btn-sm btn-warning">Edit</a>
-                                    {% endif %}
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'commission_week_detail' week.pk %}" class="btn btn-sm btn-outline-info">
+                                            <i class="bi bi-eye me-1"></i>View
+                                        </a>
+                                        {% if user.is_manager and week %}
+                                            <a href="{% url 'commission_week_update' week.pk %}" class="btn btn-sm btn-outline-warning">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </a>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="7" class="text-center">No commission weeks found.</td>
+                                <td colspan="7" class="text-center py-4">No commission weeks found.</td>
                             </tr>
                         {% endfor %}
                         </tbody>

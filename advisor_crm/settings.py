@@ -42,7 +42,14 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'widget_tweaks',
     'crm',
+    'rest_framework',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -52,6 +59,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'crm.middleware.ActivityTrackingMiddleware',
 ]
 
 ROOT_URLCONF = "advisor_crm.urls"
@@ -69,6 +77,9 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                 # Add custom context processor here
+                "crm.context_processors.pending_approvals", 
+                'crm.views.dispute_context_processor', 
             ],
         },
     },
@@ -90,6 +101,7 @@ DATABASES = {
         'HOST': 'localhost', # in fedora
         #'HOST': '192.168.1.13', #mac os
         'PORT': '3306',
+        'ATOMIC_REQUESTS': True,
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             #'auth_plugin': 'password',

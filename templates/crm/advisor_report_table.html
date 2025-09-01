@@ -1,0 +1,143 @@
+<!-- advisor_report_table.html -->
+{% if weekly_data %}
+<div class="table-responsive rounded-3 shadow-sm mb-4">
+    <table class="table table-hover mb-0" style="table-layout: fixed; width: 100%;">
+        <thead class="table-light">
+            <tr>
+                <th scope="col" class="bg-light text-dark" style="width: 8%">Day</th>
+                <th scope="col" class="text-center" style="width: 5%">Calls</th>
+                <th scope="col" class="text-center" style="width: 5%">Appts Booked</th>
+                <th scope="col" class="text-center" style="width: 5%">Appts Attended</th>
+                <th scope="col" class="text-center" style="width: 5%">Presentations</th>
+                <th scope="col" class="text-center" style="width: 5%">References</th>
+                <th scope="col" class="text-center" colspan="2" style="width: 6%">Brochures</th>
+                <th scope="col" class="text-center" style="width: 5%">Introductions</th>
+                <th scope="col" class="text-center" style="width: 5%">Other Sources</th>
+                <th scope="col" class="text-center" style="width: 5%">Policies Sold</th>
+                <th scope="col" class="text-center" style="width: 6%">Total Premium</th>
+                <th scope="col" class="text-center" style="width: 5%">Home Insurance</th>
+                <th scope="col" class="text-center" colspan="2" style="width: 8%">Pending Policies</th>
+                <th scope="col" class="text-center" style="width: 8%">Remarks</th>
+                <th scope="col" class="text-center" style="width: 5%">Mortgages</th>
+                <th scope="col" class="text-center" style="width: 5%">Wills</th>
+            </tr>
+            <tr>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="text-center bg-light" style="width: 3%">Sent</th>
+                <th class="text-center bg-light" style="width: 3%">Received</th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="text-center bg-light" style="width: 4%">Count</th>
+                <th class="text-center bg-light" style="width: 4%">Amount</th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+                <th class="bg-light"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for day_data in weekly_data %}
+            <tr class="{% if forloop.last %}table-active fw-bold{% endif %}">
+                <td class="fw-semibold {% if not forloop.last %}text-primary{% endif %}">{{ day_data.day_name }}</td>
+                <td class="text-center">{{ day_data.calls_made }}</td>
+                <td class="text-center">{{ day_data.appointments_booked }}</td>
+                <td class="text-center">{{ day_data.appointments_attended }}</td>
+                <td class="text-center">{{ day_data.presentations_made }}</td>
+                <td class="text-center">{{ day_data.references_collected }}</td>
+                <td class="text-center">{{ day_data.brochures_sent }}</td>
+                <td class="text-center">{{ day_data.brochures_received }}</td>
+                <td class="text-center">{{ day_data.customer_introductions }}</td>
+                <td class="text-center">{{ day_data.other_sources }}</td>
+                <td class="text-center">{{ day_data.policies_sold }}</td>
+                <td class="text-center fw-semibold">£{{ day_data.total_premium|floatformat:2|intcomma }}</td>
+                <td class="text-center">{{ day_data.home_insurance }}</td>
+                <td class="text-center">{{ day_data.pending_policies_count }}</td>
+                <td class="text-center">£{{ day_data.pending_policies_amount|floatformat:2|intcomma }}</td>
+                <td class="text-center">
+                    {% if day_data.remarks %}
+                    <span class="d-inline-block text-truncate" style="max-width: 120px;" data-bs-toggle="tooltip"
+                        title="{{ day_data.remarks }}">
+                        {{ day_data.remarks }}
+                    </span>
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ day_data.mortgages }}</td>
+                <td class="text-center">{{ day_data.wills }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    No activity data found for week {{ selected_week }}, {{ selected_year }}.
+</div>
+{% endif %}
+{% if weekly_data and weekly_data.0.policy_details %}
+<!-- Policy Details Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="fw-bold text-primary mb-3">Policy Details</h5>
+
+        {% for day_data in weekly_data %}
+        {% if day_data.policy_details %}
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">{{ day_data.day_name }} - {{ day_data.date|date:"d.m.Y" }}</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Address</th>
+                                <th>Contact No</th>
+                                <th>DOB</th>
+                                <th>Provider</th>
+                                <th>Life Cover</th>
+                                <th>Policy No</th>
+                                <th>Premium</th>
+                                <th>Commission</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for policy in day_data.policy_details %}
+                            <tr>
+                                <td>{{ policy.applicant_name }}</td>
+                                <td>{{ policy.address|truncatewords:3 }}</td>
+                                <td>{{ policy.contact_no }}</td>
+                                <td>{% if policy.date_of_birth %}{{ policy.date_of_birth|date:"d.m.Y" }}{% else %}N/A{%
+                                    endif %}</td>
+                                <td>{{ policy.provider }}</td>
+                                <td>£{{ policy.life_cover_amount|floatformat:2|intcomma }}</td>
+                                <td>{{ policy.policy_number }}</td>
+                                <td>£{{ policy.illustration_premium|floatformat:2|intcomma }}</td>
+                                <td>£{{ policy.illustration_commission|floatformat:2|intcomma }}</td>
+                                <td>
+                                    <span
+                                        class="badge bg-{% if policy.policy_status == 'Active' %}success{% else %}warning{% endif %}">
+                                        {{ policy.policy_status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

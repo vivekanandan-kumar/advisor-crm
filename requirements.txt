@@ -7,3 +7,6 @@ django-widget-tweaks==1.5.0
 gunicorn==21.2.0
 mysqlclient==2.2.4
 pillow==11.1.0
+pandas==2.3.2
+xlsxwriter==3.2.5
+djangorestframework==3.16.1

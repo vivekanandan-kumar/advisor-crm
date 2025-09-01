@@ -1,5 +1,6 @@
 {% extends 'crm/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}Commission Report - Pinnacle Financial Solutions{% endblock %}
 
@@ -17,6 +18,9 @@
     {% endif %}
     <button class="btn btn-outline-secondary" id="exportBtn">
         <i class="bi bi-download me-1"></i> Export
+    </button>
+    <button class="btn btn-outline-primary" id="exportPdfBtn">
+        <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
     </button>
 </div>
 {% endblock %}
@@ -46,7 +50,8 @@
                             <i class="bi bi-currency-pound text-primary fs-1"></i>
                         </div>
                     </div>
-                    <p class="text-success small mt-2"><i class="bi bi-arrow-up"></i> {{ estimated_growth }}% from last week</p>
+                    <p class="text-success small mt-2"><i class="bi bi-arrow-up"></i> {{ estimated_growth }}% from last
+                        week</p>
                 </div>
             </div>
         </div>
@@ -78,7 +83,8 @@
                             <i class="bi bi-graph-up text-warning fs-1"></i>
                         </div>
                     </div>
-                    <p class="text-danger small mt-2"><i class="bi bi-arrow-down"></i> {{ variance_percentage }}% variance</p>
+                    <p class="text-danger small mt-2"><i class="bi bi-arrow-down"></i> {{ variance_percentage }}%
+                        variance</p>
                 </div>
             </div>
         </div>
@@ -100,64 +106,37 @@
         </div>
     </div>
 
-    <!-- Week Selector and Filters -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <div class="week-selector mb-3">
-                        <span class="fw-bold me-3">Week:</span>
-                        {% for week in available_weeks %}
-                        <a href="?week={{ week.week_number }}&year={{ week.year }}" class="week-btn {% if week.week_number == selected_week and week.year == selected_year %}active{% endif %}">
-                            {{ week.week_number }}
-                        </a>
-                        {% endfor %}
-                        <span class="ms-2 text-muted">{{ week_dates }}</span>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="d-flex gap-2">
-                        <select class="form-select form-select-sm" id="statusFilter">
-                            <option value="">All Statuses</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Disputed">Disputed</option>
-                        </select>
-                        <button class="btn btn-sm btn-outline-secondary" id="applyFilters">
-                            <i class="bi bi-funnel"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Tabs Navigation -->
     <ul class="nav nav-tabs mb-4" id="commissionTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="weeks-tab" data-bs-toggle="tab" data-bs-target="#weeks" type="button" role="tab">
+            <button class="nav-link {% if active_tab == 'weeks' %}active{% endif %}" id="weeks-tab" data-bs-toggle="tab"
+                data-bs-target="#weeks" type="button" role="tab">
                 <i class="bi bi-calendar-week me-1"></i> Commission Weeks
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="report-tab" data-bs-toggle="tab" data-bs-target="#report" type="button" role="tab">
+            <button class="nav-link {% if active_tab == 'report' %}active{% endif %}" id="report-tab"
+                data-bs-toggle="tab" data-bs-target="#report" type="button" role="tab">
                 <i class="bi bi-graph-up me-1"></i> Commission Report
             </button>
         </li>
+        <!-- NEW TAB FOR ADVISOR WEEKLY REPORT -->
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications" type="button" role="tab">
+            <button class="nav-link {% if active_tab == 'advisor-report' %}active{% endif %}" id="advisor-report-tab"
+                data-bs-toggle="tab" data-bs-target="#advisor-report" type="button" role="tab">
+                <i class="bi bi-file-text me-1"></i> Weekly Advisor Report
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'applications' %}active{% endif %}" id="applications-tab"
+                data-bs-toggle="tab" data-bs-target="#applications" type="button" role="tab">
                 <i class="bi bi-file-text me-1"></i> Applications
             </button>
         </li>
         {% if user.is_manager %}
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
-                <i class="bi bi-credit-card me-1"></i> Payments
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="auto-assign-tab" data-bs-toggle="tab" data-bs-target="#auto-assign" type="button" role="tab">
+            <button class="nav-link {% if active_tab == 'auto-assign' %}active{% endif %}" id="auto-assign-tab"
+                data-bs-toggle="tab" data-bs-target="#auto-assign" type="button" role="tab">
                 <i class="bi bi-magic me-1"></i> Auto Assign
             </button>
         </li>
@@ -167,7 +146,7 @@
     <!-- Tab Content -->
     <div class="tab-content" id="commissionTabContent">
         <!-- Commission Weeks Tab -->
-        <div class="tab-pane fade show active" id="weeks" role="tabpanel">
+        <div class="tab-pane fade {% if active_tab == 'weeks' %}show active{% endif %}" id="weeks" role="tabpanel">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Commission Weeks</h5>
@@ -192,7 +171,8 @@
                             </thead>
                             <tbody>
                                 {% for week in commission_weeks %}
-                                <tr class="commission-row {% if week.status == 'Paid' %}paid{% elif week.status == 'Pending Review' %}pending{% elif week.status == 'Open' %}info{% endif %}">
+                                <tr
+                                    class="commission-row {% if week.status == 'Paid' %}paid{% elif week.status == 'Pending Review' %}pending{% elif week.status == 'Open' %}info{% endif %}">
                                     <td>Week {{ week.week_number }}</td>
                                     <td>{{ week.advisor.get_full_name }}</td>
                                     <td>{{ week.start_date|date:"M d" }} - {{ week.end_date|date:"M d" }}</td>
@@ -200,22 +180,26 @@
                                     <td>£{{ week.total_actual_commission|floatformat:2 }}</td>
                                     <td>
                                         {% with variance=week.total_estimated_commission|add:"-"|add:week.total_actual_commission %}
-                                        <span class="{% if variance > 0 %}text-danger{% elif variance < 0 %}text-success{% endif %}">
+                                        <span
+                                            class="{% if variance > 0 %}text-danger{% elif variance < 0 %}text-success{% endif %}">
                                             £{{ variance|floatformat:2 }}
                                         </span>
                                         {% endwith %}
                                     </td>
                                     <td>
-                                        <span class="badge bg-{% if week.status == 'Paid' %}success{% elif week.status == 'Pending Review' %}warning{% elif week.status == 'Open' %}info{% else %}primary{% endif %}">
+                                        <span
+                                            class="badge bg-{% if week.status == 'Paid' %}success{% elif week.status == 'Pending Review' %}warning{% elif week.status == 'Open' %}info{% else %}primary{% endif %}">
                                             {{ week.status }}
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="{% url 'commission_week_detail' week.pk %}" class="btn btn-sm btn-info">
+                                        <a href="{% url 'commission_week_detail' week.pk %}"
+                                            class="btn btn-sm btn-info">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         {% if user.is_manager %}
-                                        <a href="{% url 'commission_week_update' week.pk %}" class="btn btn-sm btn-warning">
+                                        <a href="{% url 'commission_week_update' week.pk %}"
+                                            class="btn btn-sm btn-warning">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         {% endif %}
@@ -234,7 +218,7 @@
         </div>
 
         <!-- Commission Report Tab -->
-        <div class="tab-pane fade" id="report" role="tabpanel">
+        <div class="tab-pane fade {% if active_tab == 'report' %}show active{% endif %}" id="report" role="tabpanel">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">Weekly Commission Report</h5>
@@ -256,19 +240,23 @@
                                     <div class="mb-3">
                                         <label class="form-label">Conversion Rate</label>
                                         <div class="progress mb-2" style="height: 20px;">
-                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ conversion_rate }}%">{{ conversion_rate }}%</div>
+                                            <div class="progress-bar bg-success" role="progressbar"
+                                                style="width: {{ conversion_rate }}%">{{ conversion_rate }}%</div>
                                         </div>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Commission Efficiency</label>
                                         <div class="progress mb-2" style="height: 20px;">
-                                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ commission_efficiency }}%">{{ commission_efficiency }}%</div>
+                                            <div class="progress-bar bg-info" role="progressbar"
+                                                style="width: {{ commission_efficiency }}%">{{ commission_efficiency }}%
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Payment Processing</label>
                                         <div class="progress mb-2" style="height: 20px;">
-                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ payment_processing }}%">{{ payment_processing }}%</div>
+                                            <div class="progress-bar bg-warning" role="progressbar"
+                                                style="width: {{ payment_processing }}%">{{ payment_processing }}%</div>
                                         </div>
                                     </div>
                                 </div>
@@ -318,330 +306,120 @@
             </div>
         </div>
 
-        <!-- Applications Tab -->
-        <div class="tab-pane fade" id="applications" role="tabpanel">
+        <!-- NEW ADVISOR WEEKLY REPORT TAB -->
+        <div class="tab-pane fade {% if active_tab == 'advisor-report' %}show active{% endif %}" id="advisor-report"
+            role="tabpanel">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Commission Applications</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Advisor Weekly Report</h5>
+                    <!--
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="printAdvisorReport()">
+                            <i class="bi bi-printer me-1"></i> Print
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="exportAdvisorReportToPDF()">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
+                        </button>
+                        <a href="{% url 'export_advisor_report' %}?week={{ selected_week }}&year={{ selected_year }}"
+                            class="btn btn-sm btn-info">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Export CSV
+                        </a>
+                    </div>
+                    -->
                 </div>
+
+                <!-- Week Search and Filters -->
                 <div class="card-body">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">Application Status</h6>
-                                    <canvas id="applicationStatusChart" height="200"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">Quick Actions</h6>
-                                    <div class="d-grid gap-2">
-                                        <a href="{% url 'application_create' %}" class="btn btn-primary">
-                                            <i class="bi bi-plus-circle me-2"></i> New Application
-                                        </a>
-                                        <button class="btn btn-outline-primary">
-                                            <i class="bi bi-upload me-2"></i> Bulk Upload
-                                        </button>
-                                        <button class="btn btn-outline-primary">
-                                            <i class="bi bi-filter me-2"></i> Filter Applications
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Application #</th>
-                                            <th>Client</th>
-                                            <th>Product</th>
-                                            <th>Premium/Amount</th>
-                                            <th>Commission Rate</th>
-                                            <th>Estimated</th>
-                                            <th>Actual</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for app in commission_applications %}
-                                        <tr class="commission-row {{ app.status_class }}">
-                                            <td>{{ app.application_number }}</td>
-                                            <td>{{ app.customer_name }}</td>
-                                            <td>{{ app.product_type }}</td>
-                                            <td>£{{ app.amount|floatformat:2 }}</td>
-                                            <td>{{ app.commission_rate }}%</td>
-                                            <td>£{{ app.estimated|floatformat:2 }}</td>
-                                            <td>
-                                                {% if app.actual %}
-                                                    £{{ app.actual|floatformat:2 }}
-                                                {% else %}
-                                                    —
-                                                {% endif %}
-                                            </td>
-                                            <td><span class="badge bg-{{ app.status_color }}">{{ app.status }}</span></td>
-                                            <td>
-                                                <a href="{% url 'application_detail' app.id %}" class="btn btn-sm btn-light action-btn">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="9" class="text-center py-4">No commission applications found.</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Payments Tab (Manager Only) -->
-        {% if user.is_manager %}
-        <div class="tab-pane fade" id="payments" role="tabpanel">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Payment Management</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">Payment Status</h6>
-                                    <canvas id="paymentStatusChart" height="200"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">Quick Actions</h6>
-                                    <div class="d-grid gap-2">
-                                        <a href="{% url 'payment_create' %}" class="btn btn-success">
-                                            <i class="bi bi-plus-circle me-2"></i> New Payment
-                                        </a>
-                                        <button class="btn btn-outline-primary">
-                                            <i class="bi bi-upload me-2"></i> Bulk Payment Upload
-                                        </button>
-                                        <button class="btn btn-outline-primary">
-                                            <i class="bi bi-filter me-2"></i> Filter Payments
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Payment ID</th>
-                                            <th>Customer</th>
-                                            <th>Amount</th>
-                                            <th>Method</th>
-                                            <th>Status</th>
-                                            <th>Date</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for payment in payments %}
-                                        <tr>
-                                            <td>{{ payment.payment_id }}</td>
-                                            <td>{{ payment.customer.first_name }} {{ payment.customer.last_name }}</td>
-                                            <td>£{{ payment.amount|floatformat:2 }}</td>
-                                            <td>{{ payment.payment_method }}</td>
-                                            <td>
-                                                <span class="badge bg-{% if payment.payment_status == 'Completed' %}success{% elif payment.payment_status == 'Pending' %}warning{% elif payment.payment_status == 'Failed' %}danger{% else %}info{% endif %}">
-                                                    {{ payment.payment_status }}
-                                                </span>
-                                            </td>
-                                            <td>{{ payment.payment_date|date:"M d, Y" }}</td>
-                                            <td>
-                                                <a href="{% url 'payment_detail' payment.pk %}" class="btn btn-sm btn-info">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                <a href="{% url 'payment_update' payment.pk %}" class="btn btn-sm btn-warning">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="7" class="text-center py-4">No payments found.</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Auto Assign Tab (Manager Only) -->
-        <div class="tab-pane fade" id="auto-assign" role="tabpanel">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Auto Assign Applications</h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i> This feature automatically assigns eligible applications to commission weeks based on their status and completion date.
-                    </div>
-
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">Assignment Criteria</h6>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="criteria1" checked>
-                                        <label class="form-check-label" for="criteria1">
-                                            Applications with "Approved" status
-                                        </label>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="criteria2" checked>
-                                        <label class="form-check-label" for="criteria2">
-                                            Applications completed in the last 30 days
-                                        </label>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="criteria3">
-                                        <label class="form-check-label" for="criteria3">
-                                            Include applications with "Under Review" status
-                                        </label>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="criteria4">
-                                        <label class="form-check-label" for="criteria4">
-                                            Exclude applications with disputes
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">Assignment Preview</h6>
-                                    <p class="small text-muted">Based on your criteria, the following assignments will be made:</p>
-                                    <ul class="list-group list-group-flush">
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            {{ mortgage_count }} Mortgage Applications
-                                            <span class="badge bg-primary rounded-pill">Week {{ current_week }}</span>
-                                        </li>
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            {{ insurance_count }} Insurance Policies
-                                            <span class="badge bg-primary rounded-pill">Week {{ current_week }}</span>
-                                        </li>
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            {{ renewal_count }} Renewals
-                                            <span class="badge bg-primary rounded-pill">Week {{ next_week }}</span>
-                                        </li>
-                                    </ul>
-                                    <a href="{% url 'auto_assign_applications' %}" class="btn btn-success w-100 mt-3">
-                                        <i class="bi bi-magic me-2"></i> Run Auto Assignment
+                    <div class="row align-items-center mb-4">
+                        <div class="col-md-8">
+                            <div class="week-search">
+                                <form id="weekSearchForm" method="GET" class="d-flex gap-2 align-items-center">
+                                    <input type="hidden" name="tab" value="advisor-report">
+                                    <span class="fw-bold">Search Week:</span>
+                                    <input type="number" name="week" id="weekInput" value="{{ selected_week }}"
+                                           class="form-control form-control-sm" placeholder="Week number" min="1" max="53"
+                                           style="width: 100px;">
+                                    <input type="number" name="year" id="yearInput" value="{{ selected_year }}"
+                                           class="form-control form-control-sm" placeholder="Year" min="2020" max="2030"
+                                           style="width: 100px;">
+                                    <button type="submit" id="searchWeekBtn" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-search me-1"></i> Search
+                                    </button>
+                                    <a href="?tab=advisor-report" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-x-circle me-1"></i> Clear
                                     </a>
-                                </div>
+                                </form>
+                                {% if week_dates and week_dates != "N/A" %}
+                                <span class="ms-2 text-muted">
+                                    <i class="bi bi-calendar me-1"></i>{{ week_dates }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="printAdvisorReport()">
+                                    <i class="bi bi-printer me-1"></i> Print
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="exportAdvisorReportToPDF()">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                                </button>
+                                <a href="{% url 'export_advisor_report' %}?week={{ selected_week }}&year={{ selected_year }}"
+                                    class="btn btn-sm btn-info">
+                                    <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                                </a>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">Recent Assignment History</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Assigned By</th>
-                                            <th>Applications</th>
-                                            <th>Week</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for assignment in assignment_history %}
-                                        <tr>
-                                            <td>{{ assignment.date|date:"M d, Y" }}</td>
-                                            <td>{{ assignment.assigned_by }}</td>
-                                            <td>{{ assignment.application_count }} applications</td>
-                                            <td>Week {{ assignment.week }}</td>
-                                            <td><span class="badge bg-success">Completed</span></td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="5" class="text-center py-4">No assignment history found.</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                    <!-- Data display section -->
+                    {% if weekly_data %}
+                    {% include 'crm/advisor_report_table.html' %}
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {% if selected_week %}
+                        No data found for week {{ selected_week }}, {{ selected_year }}.
+                        {% else %}
+                        Please select a week to view the report.
+                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        {% endif %}
     </div>
 </div>
 
-<!-- Comment Modal -->
-<div class="modal fade" id="commentModal" tabindex="-1">
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add Comment</h5>
+                <h5 class="modal-title">Export Report</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Application</label>
-                    <input type="text" class="form-control" value="APP-CI-10237 - Robert Brown" disabled>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Comment Type</label>
-                    <select class="form-select">
-                        <option>General Note</option>
-                        <option>Commission Dispute</option>
-                        <option>Payment Issue</option>
-                        <option>Application Query</option>
+                    <label class="form-label">Select Format</label>
+                    <select class="form-select" id="exportFormat">
+                        <option value="pdf">PDF Document</option>
+                        <option value="excel">Excel Spreadsheet</option>
+                        <option value="csv">CSV File</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Comment</label>
-                    <textarea class="form-control" rows="4" placeholder="Enter your comment or issue here..."></textarea>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Attachment (Optional)</label>
-                    <input type="file" class="form-control">
+                    <label class="form-label">Date Range</label>
+                    <div class="input-group">
+                        <input type="date" class="form-control" id="exportStartDate">
+                        <span class="input-group-text">to</span>
+                        <input type="date" class="form-control" id="exportEndDate">
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary">Submit Comment</button>
+                <button type="button" class="btn btn-primary" onclick="handleExport()">Export</button>
             </div>
         </div>
     </div>
@@ -650,229 +428,240 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize charts with real data
-        const commissionCtx = document.getElementById('commissionChart').getContext('2d');
-        const commissionChart = new Chart(commissionCtx, {
-            type: 'bar',
-            data: {
-                labels: [{% for product in product_summary %}'{{ product.type }}',{% endfor %}],
-                datasets: [{
-                    label: 'Commission Earned (£)',
-                    data: [{% for product in product_summary %}{{ product.commission }},{% endfor %}],
-                    backgroundColor: [
-                        'rgba(30, 64, 175, 0.7)',
-                        'rgba(59, 130, 246, 0.7)',
-                        'rgba(5, 150, 105, 0.7)',
-                        'rgba(16, 185, 129, 0.7)',
-                        'rgba(139, 92, 246, 0.7)',
-                        'rgba(236, 72, 153, 0.7)',
-                        'rgba(249, 115, 22, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgb(30, 64, 175)',
-                        'rgb(59, 130, 246)',
-                        'rgb(5, 150, 105)',
-                        'rgb(16, 185, 129)',
-                        'rgb(139, 92, 246)',
-                        'rgb(236, 72, 153)',
-                        'rgb(249, 115, 22)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                }
+    // Function to export the advisor report as PDF
+    function exportAdvisorReportToPDF() {
+        // Use html2canvas to capture the report as an image
+        html2canvas(document.querySelector('.advisor-report-table')).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+
+            const imgWidth = 290; // A4 width in mm (landscape)
+            const pageHeight = 210; // A4 height in mm
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            doc.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            // Add additional pages if needed
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                doc.addPage();
+                doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
             }
-        });
 
-        const statusCtx = document.getElementById('applicationStatusChart').getContext('2d');
-        const statusChart = new Chart(statusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Paid', 'Pending', 'Submitted', 'Disputed'],
-                datasets: [{
-                    data: [{{ paid_count }}, {{ pending_count }}, {{ submitted_count }}, {{ disputed_count }}],
-                    backgroundColor: [
-                        'rgba(5, 150, 105, 0.7)',
-                        'rgba(245, 158, 11, 0.7)',
-                        'rgba(59, 130, 246, 0.7)',
-                        'rgba(239, 68, 68, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgb(5, 150, 105)',
-                        'rgb(245, 158, 11)',
-                        'rgb(59, 130, 246)',
-                        'rgb(239, 68, 68)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                }
+            // Save the PDF
+            doc.save('Advisor-Weekly-Report-Week-{{ selected_week }}.pdf');
+        });
+    }
+
+    // Function to print the advisor report
+    function printAdvisorReport() {
+        const printContent = document.querySelector('.advisor-report-table').outerHTML;
+        const originalContent = document.body.innerHTML;
+
+        document.body.innerHTML = printContent;
+        window.print();
+        document.body.innerHTML = originalContent;
+        location.reload(); // Reload to restore the original page
+    }
+
+    // Handle export based on selected format
+    function handleExport() {
+        const format = document.getElementById('exportFormat').value;
+
+        if (format === 'pdf') {
+            exportAdvisorReportToPDF();
+        } else if (format === 'excel') {
+            // Implement Excel export functionality
+            alert('Excel export functionality would be implemented here');
+        } else if (format === 'csv') {
+            // Implement CSV export functionality
+            alert('CSV export functionality would be implemented here');
+        }
+
+        // Close the modal
+        $('#exportModal').modal('hide');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize charts
+        const commissionCtx = document.getElementById('commissionChart')?.getContext('2d');
+        if (commissionCtx) {
+            const commissionChart = new Chart(commissionCtx, {
+                type: 'bar',
+                data: {
+                    labels: [{% for product in product_summary %}'{{ product.type }}',{% endfor %}],
+        datasets: [{
+            label: 'Commission Earned (£)',
+            data: [{% for product in product_summary %}{{ product.commission }}, {% endfor %}],
+        backgroundColor: [
+        'rgba(30, 64, 175, 0.7)',
+        'rgba(59, 130, 246, 0.7)',
+        'rgba(5, 150, 105, 0.7)',
+        'rgba(16, 185, 129, 0.7)',
+        'rgba(139, 92, 246, 0.7)',
+        'rgba(236, 72, 153, 0.7)',
+        'rgba(249, 115, 22, 0.7)'
+    ],
+        borderColor: [
+        'rgb(30, 64, 175)',
+        'rgb(59, 130, 246)',
+        'rgb(5, 150, 105)',
+        'rgb(16, 185, 129)',
+        'rgb(139, 92, 246)',
+        'rgb(236, 72, 153)',
+        'rgb(249, 115, 22)'
+    ],
+        borderWidth: 1
+                    }]
+                },
+        options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
             }
-        });
-
-        // Payment status chart
-        const paymentCtx = document.getElementById('paymentStatusChart').getContext('2d');
-        const paymentChart = new Chart(paymentCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Completed', 'Pending', 'Failed', 'Processing'],
-                datasets: [{
-                    data: [{{ payment_completed }}, {{ payment_pending }}, {{ payment_failed }}, {{ payment_processing }}],
-                    backgroundColor: [
-                        'rgba(5, 150, 105, 0.7)',
-                        'rgba(245, 158, 11, 0.7)',
-                        'rgba(239, 68, 68, 0.7)',
-                        'rgba(59, 130, 246, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgb(5, 150, 105)',
-                        'rgb(245, 158, 11)',
-                        'rgb(239, 68, 68)',
-                        'rgb(59, 130, 246)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                }
-            }
-        });
-
-        // Export functionality
-        document.getElementById('exportBtn').addEventListener('click', function() {
-            const tabName = document.querySelector('.nav-link.active').textContent.trim();
-            alert(`Exporting ${tabName} data...`);
-            // In a real implementation, this would generate a CSV or PDF
-        });
-
-        // Filter functionality
-        document.getElementById('applyFilters').addEventListener('click', function() {
-            const statusFilter = document.getElementById('statusFilter').value;
-            // Apply filters and reload data
-            console.log(`Applying status filter: ${statusFilter}`);
-            // In a real implementation, this would reload the data with the applied filters
-        });
-
-        // Highlight table rows on click
-        const rows = document.querySelectorAll('.commission-row');
-        rows.forEach(row => {
-            row.addEventListener('click', function() {
-                rows.forEach(r => r.classList.remove('table-active'));
-                this.classList.add('table-active');
+        }
+    }
             });
+        }
+
+    // Add event listener for the export button
+    document.getElementById('exportPdfBtn')?.addEventListener('click', function () {
+        $('#exportModal').modal('show');
+    });
+
+    // Existing functionality
+    document.getElementById('exportBtn')?.addEventListener('click', function () {
+        const tabName = document.querySelector('.nav-link.active').textContent.trim();
+        alert(`Exporting ${tabName} data...`);
+    });
+
+    // Filter functionality
+    document.getElementById('applyFilters')?.addEventListener('click', function () {
+        const statusFilter = document.getElementById('statusFilter').value;
+        console.log(`Applying status filter: ${statusFilter}`);
+    });
+
+    // Highlight table rows on click
+    const rows = document.querySelectorAll('.commission-row');
+    rows.forEach(row => {
+        row.addEventListener('click', function () {
+            rows.forEach(r => r.classList.remove('table-active'));
+            this.classList.add('table-active');
         });
+    });
+
+    // Handle week search form submission
+    const weekSearchForm = document.getElementById('weekSearchForm');
+    if (weekSearchForm) {
+        weekSearchForm.addEventListener('submit', function(e) {
+            const weekInput = document.getElementById('weekInput');
+            const yearInput = document.getElementById('yearInput');
+            const searchBtn = document.getElementById('searchWeekBtn');
+            
+            // Validate inputs
+            if (weekInput.value && (weekInput.value < 1 || weekInput.value > 53)) {
+                e.preventDefault();
+                alert('Please enter a valid week number (1-53)');
+                weekInput.focus();
+                return;
+            }
+            
+            if (yearInput.value && (yearInput.value < 2020 || yearInput.value > 2030)) {
+                e.preventDefault();
+                alert('Please enter a valid year (2020-2030)');
+                yearInput.focus();
+                return;
+            }
+            
+            // Show loading indicator
+            searchBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Searching...';
+            searchBtn.disabled = true;
+        });
+    }
+    
+    // Auto-focus on week input
+    const weekInput = document.getElementById('weekInput');
+    if (weekInput && !weekInput.value) {
+        weekInput.focus();
+    }
     });
 </script>
 
 <style>
-    .summary-card {
-        transition: all 0.3s ease;
+    /* Styles for the advisor weekly report table */
+    .advisor-report-table {
+        font-size: 0.7rem;
+        width: 100%;
     }
 
-    .summary-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    .advisor-report-table td {
+        padding: 2px 4px;
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid #dee2e6;
+        min-width: 30px;
+        max-width: 50px;
+        word-wrap: break-word;
+        line-height: 1.2;
     }
 
-    .week-selector {
-        display: flex;
-        align-items: center;
-        gap: 10px;
+    /* Week search styling */
+    .week-search {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
     }
 
-    .week-btn {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background-color: #e9ecef;
-        color: #495057;
-        text-decoration: none;
-        font-weight: bold;
+    .week-search .form-control-sm {
+        height: 32px;
     }
 
-    .week-btn.active {
-        background-color: #1e40af;
-        color: white;
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
     }
 
-    .commission-table th {
-        background-color: #f8f9fa;
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .advisor-report-table {
+            font-size: 0.6rem;
+        }
     }
 
-    .commission-row {
-        transition: background-color 0.2s;
-        cursor: pointer;
+    @media (max-width: 992px) {
+        .advisor-report-table {
+            font-size: 0.55rem;
+        }
     }
 
-    .commission-row:hover {
-        background-color: #f8f9fa !important;
-    }
+    /* Print styles for the advisor report */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
 
-    .commission-row.paid {
-        background-color: #f0fff4;
-    }
+        #advisorWeeklyReport,
+        #advisorWeeklyReport * {
+            visibility: visible;
+        }
 
-    .commission-row.pending {
-        background-color: #fff4e6;
-    }
-
-    .commission-row.info {
-        background-color: #e8f4fd;
-    }
-
-    .commission-row.disputed {
-        background-color: #ffeaea;
-    }
-
-    .commission-row.table-active {
-        background-color: #cce5ff !important;
-    }
-
-    .action-btn {
-        padding: 5px 8px;
-        font-size: 12px;
-        border-radius: 4px;
-    }
-
-    .nav-tabs .nav-link {
-        border: none;
-        border-bottom: 3px solid transparent;
-        color: #495057;
-        font-weight: 500;
-        padding: 12px 20px;
-    }
-
-    .nav-tabs .nav-link.active {
-        border-bottom: 3px solid #1e40af;
-        color: #1e40af;
-        background-color: transparent;
-    }
-
-    .nav-tabs .nav-link:hover {
-        border-color: transparent;
-        color: #1e40af;
+        #advisorWeeklyReport {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}

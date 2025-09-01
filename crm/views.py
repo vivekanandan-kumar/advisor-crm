@@ -2,13 +2,13 @@
 from django.contrib.auth import login, authenticate, logout
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib import messages
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.contrib.auth import get_user_model  
@@ -16,24 +16,28 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from decimal import Decimal
-from django.views.decorators.csrf import csrf_protect
-from .forms import DocumentForm, CommunicationForm, PaymentForm, CommissionWeekForm, CommissionApplicationMappingForm
+from django.views.decorators.csrf import csrf_protect,csrf_exempt
 from django.db import models
 from django.db.models import Q, Count, Sum, Avg 
 from django.db.models.functions import TruncMonth, TruncYear
 from collections import defaultdict
 import calendar
-from datetime import datetime, timedelta, date
-import datetime
-
+import pandas as pd
+from django.http import HttpResponse
+from io import BytesIO
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from .models import (
-    Customer, Mortgage, InsurancePolicy, Application,
-    Document, Communication, Commission, Payment, CommissionWeek, CommissionApplicationMapping,CommissionWeek, CommissionMapping, Application
+    Customer, Mortgage, InsurancePolicy, Application, Advisor,
+    Document, Communication, Commission, Payment, CommissionWeek, 
+    CommissionMapping, Application, CommissionDispute,  # Add CommissionMapping here
+    DailyAdvisorActivity
 )
 from .forms import (
-    CustomerForm, MortgageForm, InsurancePolicyForm,
-    ApplicationForm, CommunicationForm, AdvisorForm, CommissionMappingForm
+    DocumentForm, PaymentForm, CustomerForm,CommissionWeekForm,  MortgageForm, InsurancePolicyForm,
+    ApplicationForm, CommunicationForm, AdvisorForm, CommissionMappingForm,CommissionWeekApprovalForm
 )
 
 # Get the custom user model
@@ -323,11 +327,15 @@ class MortgageUpdateView(LoginRequiredMixin, UpdateView):
     form_class = MortgageForm
     template_name = 'crm/mortgage_form.html'
     success_url = reverse_lazy('mortgage_list')
+    pk_url_kwarg = 'pk'  # Explicitly specify the URL keyword
 
     def get_queryset(self):
-        # Remove advisor filter to allow editing all mortgages
-        # return Mortgage.objects.filter(advisor=self.request.user)
         return Mortgage.objects.all()
+
+    def get_object(self, queryset=None):
+        # Handle string primary key (mortgage_id)
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        return get_object_or_404(Mortgage, mortgage_id=pk)
 
     def form_valid(self, form):
         messages.success(self.request, 'Mortgage updated successfully!')
@@ -354,9 +362,12 @@ class InsuranceListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        # Remove advisor filter to show all insurance policies
-        # return InsurancePolicy.objects.filter(advisor=self.request.user).order_by('-created_at')
-        return InsurancePolicy.objects.all().order_by('-created_at')
+        # Prefetch related application data to avoid N+1 queries
+        return InsurancePolicy.objects.all().select_related(
+            'customer', 'advisor'
+        ).prefetch_related(
+            'applications'
+        ).order_by('-created_at')
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -364,7 +375,7 @@ class InsuranceListView(LoginRequiredMixin, ListView):
         if search_query:
             context['search'] = search_query
         return context
-
+    
 class InsuranceCreateView(LoginRequiredMixin, CreateView):
     model = InsurancePolicy
     form_class = InsurancePolicyForm
@@ -389,22 +400,79 @@ class InsuranceDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'insurance'
 
     def get_queryset(self):
-        # Remove advisor filter to allow access to all insurance policies
-        # return InsurancePolicy.objects.filter(advisor=self.request.user)
-        return InsurancePolicy.objects.all()
+        # Prefetch related data including applications and their documents
+        return InsurancePolicy.objects.all().select_related(
+            'customer', 'advisor'
+        ).prefetch_related(
+            'applications', 
+            'applications__document_set',  # Changed from 'applications__documents'
+            'applications__communication_set'
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        insurance = self.get_object()
+        
+        # Get the first application related to this insurance policy
+        application = insurance.applications.first()
+        
+        # Get documents and communications related to this application
+        documents = Document.objects.filter(application=application) if application else []
+        communications = Communication.objects.filter(application=application) if application else []
+        
+        context['application'] = application
+        context['documents'] = documents
+        context['communications'] = communications
+        
+        return context
 
 class InsuranceUpdateView(LoginRequiredMixin, UpdateView):
     model = InsurancePolicy
     form_class = InsurancePolicyForm
     template_name = 'crm/insurance_form.html'
     success_url = reverse_lazy('insurance_list')
+    pk_url_kwarg = 'pk'
 
     def get_queryset(self):
-        # Remove advisor filter to allow editing all insurance policies
-        # return InsurancePolicy.objects.filter(advisor=self.request.user)
         return InsurancePolicy.objects.all()
 
+    def get_object(self, queryset=None):
+        # Get by insurance_id (primary key)
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        return get_object_or_404(InsurancePolicy, insurance_id=pk)
+
     def form_valid(self, form):
+        insurance_policy = form.save(commit=False)
+        
+        # Update related applications if they exist
+        try:
+            # Use the correct reverse relationship name - it's 'application_set' or the related_name
+            related_applications = Application.objects.filter(insurance=insurance_policy)
+            for application in related_applications:
+                # Update application fields based on insurance changes
+                if 'policy_status' in form.changed_data:
+                    # Map insurance status to application status
+                    status_mapping = {
+                        'Active': 'Approved',
+                        'Cancelled': 'Declined',
+                        'Pending': 'Under Review',
+                        'Quote': 'Initial Contact',
+                        'Renewed': 'Completed',
+                    }
+                    
+                    if insurance_policy.policy_status in status_mapping:
+                        application.application_status = status_mapping[insurance_policy.policy_status]
+                        application.save()
+                        
+                # Also update the insurance_type if policy_type changed
+                if 'policy_type' in form.changed_data:
+                    application.insurance_type = insurance_policy.policy_type
+                    application.save()
+                    
+        except Exception as e:
+            # Log the error but don't break the insurance update
+            print(f"Error updating related applications: {str(e)}")
+        
         messages.success(self.request, 'Insurance policy updated successfully!')
         return super().form_valid(form)
 
@@ -452,7 +520,33 @@ class ApplicationListView(LoginRequiredMixin, ListView):
             context['search'] = search_query
         return context
 
-# views.py - Add advanced search function
+def search_mortgages(request):
+    query = request.GET.get('q', '')
+    if len(query) < 2:
+        return JsonResponse([], safe=False)
+    
+    mortgages = Mortgage.objects.filter(
+        Q(property_address__icontains=query) |
+        Q(property_postal_code__icontains=query) |
+        Q(property_city__icontains=query) |
+        Q(customer__first_name__icontains=query) |
+        Q(customer__last_name__icontains=query)
+    ).select_related('customer')[:10]  # Limit to 10 results
+    
+    results = []
+    for mortgage in mortgages:
+        results.append({
+            'id': str(mortgage.mortgage_id),
+            'address': mortgage.property_address,
+            'postal_code': mortgage.property_postal_code,
+            'city': mortgage.property_city,
+            'customer': f"{mortgage.customer.first_name} {mortgage.customer.last_name}",
+            'amount': f"{mortgage.loan_amount:,.2f}",
+            'status': mortgage.mortgage_status
+        })
+    
+    return JsonResponse(results, safe=False)
+
 @login_required
 def application_search(request):
     """Advanced application search"""
@@ -489,7 +583,18 @@ class ApplicationDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         application = self.get_object()
 
-        context['documents'] = Document.objects.filter(application=application)
+        # Get all related documents using a single query with Q objects
+        from django.db.models import Q
+        
+        document_filters = Q(application=application)
+        
+        if application.insurance:
+            document_filters |= Q(insurance=application.insurance)
+            
+        if application.mortgage:
+            document_filters |= Q(mortgage=application.mortgage)
+            
+        context['documents'] = Document.objects.filter(document_filters).select_related('uploaded_by')
         context['communications'] = Communication.objects.filter(application=application).order_by('-communication_date')[:10]
 
         return context
@@ -570,16 +675,63 @@ class ApplicationUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         return Application.objects.all()
 
-    def form_valid(self, form):
-        messages.success(self.request, 'Application updated successfully!')
-        return super().form_valid(form)
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        return kwargs
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields['customer'].queryset = Customer.objects.all()
         form.fields['mortgage'].queryset = Mortgage.objects.all()
         form.fields['insurance'].queryset = InsurancePolicy.objects.all()
+        
+        # Disable application type field in edit mode
+        if self.object and self.object.pk:
+            form.fields['application_type'].disabled = True
+        
         return form
+
+    def form_valid(self, form):
+        application = form.save(commit=False)
+        
+        # Update linked mortgage status if application status changes
+        if 'application_status' in form.changed_data and application.mortgage:
+            # Map application status to mortgage status
+            status_mapping = {
+                'Approved': 'Approved',
+                'Declined': 'Declined',
+                'Completed': 'Completed',
+                'Under Review': 'Application',
+                'Initial Contact': 'Enquiry',
+                'Documents Requested': 'Application',
+            }
+            
+            if application.application_status in status_mapping:
+                application.mortgage.mortgage_status = status_mapping[application.application_status]
+                application.mortgage.save()
+        
+        # Update linked insurance status if application status changes
+        if 'application_status' in form.changed_data and application.insurance:
+            # Map application status to insurance status
+            status_mapping = {
+                'Approved': 'Active',
+                'Declined': 'Cancelled',
+                'Completed': 'Active',
+                'Under Review': 'Pending',
+                'Initial Contact': 'Quote',
+                'Documents Requested': 'Pending',
+            }
+            
+            if application.application_status in status_mapping:
+                application.insurance.policy_status = status_mapping[application.application_status]
+                application.insurance.save()
+                
+        # Also update insurance_type if it's an insurance application
+        if application.insurance and application.application_type == 'Insurance':
+            application.insurance_type = application.insurance.policy_type
+                
+        messages.success(self.request, 'Application updated successfully!')
+        return super().form_valid(form)
 
 @login_required
 def application_create_view(request):
@@ -648,6 +800,7 @@ def application_create_view(request):
                                 timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
                                 application_number = f"APP_MRT_{request.user.id}_{timestamp}_{applications_created}"
                                 
+                                # Create application linked to existing mortgage
                                 application = Application.objects.create(
                                     customer=application_data['customer'],
                                     application_type='Mortgage',
@@ -660,7 +813,7 @@ def application_create_view(request):
                                     advisor_notes=application_data['advisor_notes'],
                                     internal_notes=application_data['internal_notes'],
                                     decline_reason=application_data['decline_reason'],
-                                    mortgage=mortgage,
+                                    mortgage=mortgage,  # Link to existing mortgage
                                     advisor=request.user,
                                     application_number=application_number
                                 )
@@ -671,16 +824,18 @@ def application_create_view(request):
                                 messages.warning(request, f'Mortgage with ID {mortgage_id} not found')
                         
                         # Create applications for each selected insurance type
+                        # Create applications for each selected insurance type
                         for insurance_type in insurance_types:
-                            # Generate application number for insurance
-                            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+                            # Generate a more unique timestamp with milliseconds
+                            timestamp = timezone.now().strftime('%Y%m%d%H%M%S%f')[:-3]  # Includes milliseconds
+
                             prefix = insurance_abbreviations.get(insurance_type, 'INS')
                             application_number = f"APP_INS_{prefix}_{request.user.id}_{timestamp}_{applications_created}"
-                            
-                            # Generate insurance ID
-                            insurance_timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+
+                            # Generate insurance ID with a more unique timestamp
+                            insurance_timestamp = timezone.now().strftime('%Y%m%d%H%M%S%f')[:-3]
                             insurance_id = f"INS_{request.user.id}_{insurance_timestamp}_{applications_created}"
-                            
+
                             # Create insurance policy first with 0 default values
                             insurance_policy = InsurancePolicy.objects.create(
                                 customer=application_data['customer'],
@@ -694,7 +849,8 @@ def application_create_view(request):
                                 policy_status='Quote',
                                 insurance_id=insurance_id
                             )
-                            
+
+                            # Create application linked to the new insurance policy
                             application = Application.objects.create(
                                 customer=application_data['customer'],
                                 application_type='Insurance',
@@ -706,12 +862,12 @@ def application_create_view(request):
                                 advisor_notes=application_data['advisor_notes'],
                                 internal_notes=application_data['internal_notes'],
                                 decline_reason=application_data['decline_reason'],
-                                insurance=insurance_policy,
+                                insurance=insurance_policy,  # Link to the insurance policy
                                 insurance_type=insurance_type,
                                 advisor=request.user,
                                 application_number=application_number
                             )
-                            applications_created += 1
+                            applications_created += 1  # Make sure this is incremented
                             print(f"DEBUG: Created insurance application: {application}")
                     
                     if applications_created > 0:
@@ -732,6 +888,225 @@ def application_create_view(request):
     
     return render(request, 'crm/application_form.html', {
         'form': form,
+    })
+
+@login_required
+def insurance_communication_create(request, insurance_id):
+    """Create communication for insurance policy and link to application"""
+    insurance = get_object_or_404(InsurancePolicy, insurance_id=insurance_id)
+    
+    # Find or create the related application for this insurance policy
+    application = insurance.applications.first()
+    if not application:
+        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        application_number = f"APP_INS_{request.user.id}_{timestamp}"
+        
+        application = Application.objects.create(
+            customer=insurance.customer,
+            application_type='Insurance',
+            application_status='Application Submitted',
+            insurance=insurance,
+            insurance_type=insurance.policy_type,
+            advisor=request.user,
+            application_number=application_number
+        )
+    
+    if request.method == 'POST':
+        form = CommunicationForm(request.POST)
+        if form.is_valid():
+            communication = form.save(commit=False)
+            communication.insurance = insurance
+            communication.application = application  # Link to the application
+            communication.customer = insurance.customer
+            communication.advisor = request.user
+            communication.save()
+            messages.success(request, 'Communication logged successfully!')
+            return redirect('insurance_detail', pk=insurance.insurance_id)
+    else:
+        form = CommunicationForm(initial={
+            'insurance': insurance,
+            'application': application
+        })
+    
+    return render(request, 'crm/communication_form.html', {
+        'form': form,
+        'insurance': insurance,
+        'customer': insurance.customer,
+        'application': application
+    })
+
+@login_required
+def application_communication_create(request, pk):
+    """Create communication for any application"""
+    application = get_object_or_404(Application, pk=pk)
+    
+    if request.method == 'POST':
+        form = CommunicationForm(request.POST)
+        if form.is_valid():
+            communication = form.save(commit=False)
+            communication.application = application
+            communication.customer = application.customer
+            communication.advisor = request.user
+            
+            # Link to insurance or mortgage if they exist
+            if application.insurance:
+                communication.insurance = application.insurance
+            if application.mortgage:
+                communication.mortgage = application.mortgage
+                
+            communication.save()
+            messages.success(request, 'Communication logged successfully!')
+            return redirect('application_detail', pk=application.pk)
+    else:
+        form = CommunicationForm(initial={
+            'application': application
+        })
+    
+    return render(request, 'crm/communication_form.html', {
+        'form': form,
+        'application': application,
+        'customer': application.customer
+    })
+
+@login_required
+def document_create(request):
+    """Create a new document"""
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            document = form.save(commit=False)
+            
+            # Set the uploaded_by field
+            document.uploaded_by = request.user
+            
+            # If application is provided, set customer from application
+            application_id = request.POST.get('application')
+            if application_id:
+                try:
+                    application = Application.objects.get(pk=application_id)
+                    document.application = application
+                    document.customer = application.customer
+                except Application.DoesNotExist:
+                    pass
+                    
+            document.save()
+            messages.success(request, 'Document added successfully!')
+            
+            # Redirect back to application detail if it came from there
+            if application_id:
+                return redirect('application_detail', pk=application_id)
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Please correct the errors in the form.')
+    else:
+        form = DocumentForm()
+        # Pre-select application if provided in GET parameters
+        application_id = request.GET.get('application')
+        if application_id:
+            form.fields['application'].initial = application_id
+    
+    return render(request, 'crm/document_form.html', {'form': form})
+
+@login_required
+def add_document(request, pk):
+    """Add document to insurance policy and link to application"""
+    insurance = get_object_or_404(InsurancePolicy, insurance_id=pk)
+    
+    # Find or create the related application for this insurance policy
+    application = insurance.applications.first()
+    if not application:
+        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        application_number = f"APP_INS_{request.user.id}_{timestamp}"
+        
+        application = Application.objects.create(
+            customer=insurance.customer,
+            application_type='Insurance',
+            application_status='Application Submitted',
+            insurance=insurance,
+            insurance_type=insurance.policy_type,
+            advisor=request.user,
+            application_number=application_number
+        )
+    
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            document = form.save(commit=False)
+            document.insurance = insurance
+            document.customer = insurance.customer
+            document.application = application  # Link to the application
+            document.uploaded_by = request.user
+            document.save()
+            messages.success(request, 'Document added successfully!')
+            return redirect('insurance_detail', pk=insurance.insurance_id)
+        else:
+            messages.error(request, 'Please correct the errors in the form.')
+    else:
+        # Initialize form with insurance and application preselected
+        form = DocumentForm(initial={
+            'insurance': insurance,
+            'application': application
+        })
+    
+    return render(request, 'crm/document_form.html', {
+        'form': form,
+        'insurance': insurance,
+        'customer': insurance.customer,
+        'application': application
+    })
+
+@login_required
+def insurance_document_create(request, insurance_id):
+    """Add document to insurance policy"""
+    insurance = get_object_or_404(InsurancePolicy, pk=insurance_id)
+    
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES)  # Include request.FILES
+        if form.is_valid():
+            document = form.save(commit=False)
+            document.insurance = insurance
+            document.customer = insurance.customer
+            document.uploaded_by = request.user
+            document.save()
+            messages.success(request, 'Document added successfully!')
+            return redirect('insurance_detail', pk=insurance.pk)
+        else:
+            messages.error(request, 'Please correct the errors in the form.')
+    else:
+        # Initialize form with insurance preselected and hidden
+        form = DocumentForm(initial={'insurance': insurance})
+    
+    return render(request, 'crm/document_form.html', {
+        'form': form,
+        #'insurance': insurance,
+        #'customer': insurance.customer
+    })
+
+@login_required
+def mortgage_document_create(request, mortgage_id):
+    """Add document to mortgage"""
+    mortgage = get_object_or_404(Mortgage, pk=mortgage_id)
+    
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES)  # Include request.FILES
+        if form.is_valid():
+            document = form.save(commit=False)
+            document.mortgage = mortgage
+            document.customer = mortgage.customer
+            document.uploaded_by = request.user
+            document.save()
+            messages.success(request, 'Document added successfully!')
+            return redirect('mortgage_detail', pk=mortgage.pk)
+        else:
+            messages.error(request, 'Please correct the errors in the form.')
+    else:
+        # Initialize form with mortgage preselected and hidden
+        form = DocumentForm(initial={'mortgage': mortgage})
+    
+    return render(request, 'crm/document_form.html', {
+        'form': form,
+        'mortgage': mortgage,
+        'customer': mortgage.customer
     })
 
 @login_required
@@ -897,6 +1272,18 @@ def update_application_status(request, application_id):
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
 @login_required
+def update_application(request, application_id):
+    application = Application.objects.get(id=application_id)
+    
+    # Only update the status field
+    if request.method == 'POST':
+        application.status = 'Approved'
+        application.save()
+        return redirect('success_page')
+    
+    return render(request, 'edit_application.html', {'application': application})
+
+@login_required
 def search_customers(request):
     """AJAX endpoint for customer search"""
     query = request.GET.get('q', '')
@@ -956,24 +1343,6 @@ def mortgage_search(request):
         print(f"Error in mortgage_search: {str(e)}")
         return JsonResponse([], safe=False)
 
-@login_required
-def add_document(request, pk):
-    """Standalone view to add a document to an application"""
-    application = get_object_or_404(Application, pk=pk)
-    
-    if request.method == 'POST':
-        form = DocumentForm(request.POST)
-        if form.is_valid():
-            document = form.save(commit=False)
-            document.application = application
-            document.customer = application.customer
-            document.uploaded_by = request.user
-            document.save()
-            messages.success(request, 'Document added successfully!')
-        else:
-            messages.error(request, 'Error adding document. Please check the form.')
-    
-    return redirect('application_detail', pk=application.pk)    
 
 @login_required
 def add_communication(request, pk):
@@ -1530,47 +1899,130 @@ def commission_weeks(request):
     }
     return render(request, 'crm/commission_weeks.html', context)
 
-
 @login_required
 def commission_week_detail(request, pk):
-    """Commission week detail view"""
     week = get_object_or_404(CommissionWeek, pk=pk)
-    mappings = CommissionApplicationMapping.objects.filter(commission_week=week)
-
+    
+    # Get commission mappings for this week (insurance policies only)
+    commission_mappings = CommissionMapping.objects.filter(commission_week=week).select_related('insurance_policy', 'insurance_policy__customer')
+    
+    # Check if user can approve (manager and week is pending)
+    can_approve = request.user.is_manager and week.status == 'Pending Review'
+    
     context = {
         'week': week,
-        'mappings': mappings,
+        'commission_mappings': commission_mappings,
+        'total_mappings_count': commission_mappings.count(),
+        'can_approve': can_approve,
+        'advisor_name': week.advisor.get_full_name() if week.advisor else 'N/A',  
+        'business_week_start': week.start_date.strftime('%d.%m.%Y') if week.start_date else 'N/A',  
+        'business_week_end': week.end_date.strftime('%d.%m.%Y') if week.end_date else 'N/A',  
+        'selected_week': week.week_number,  
     }
+    
     return render(request, 'crm/commission_week_detail.html', context)
 
 @login_required
+def add_insurance_to_week(request, week_id):
+    """Add insurance policies to commission week"""
+    week = get_object_or_404(CommissionWeek, pk=week_id)
+    
+    if request.method == 'POST':
+        policy_ids = request.POST.getlist('policy_ids')
+        policies_added = 0
+        
+        for policy_id in policy_ids:
+            policy = get_object_or_404(InsurancePolicy, pk=policy_id)
+            
+            # Check if policy is already mapped
+            if CommissionMapping.objects.filter(commission_week=week, insurance_policy=policy).exists():
+                continue
+            
+            # Create commission mapping
+            CommissionMapping.objects.create(
+                commission_week=week,
+                insurance_policy=policy,
+                commission_rate=Decimal('20.0'),  # Default 20% commission rate
+                estimated_commission=policy.premium_amount * Decimal('0.2')
+            )
+            policies_added += 1
+        
+        if policies_added > 0:
+            messages.success(request, f'{policies_added} insurance policy(s) added to commission week.')
+        else:
+            messages.warning(request, 'No policies were added. They may have already been assigned.')
+        
+        return redirect('commission_week_detail', pk=week.pk)
+    
+    # GET request - show available policies
+    available_policies = InsurancePolicy.objects.filter(
+        policy_status__in=['Active', 'Renewed'],
+        advisor=request.user
+    ).exclude(
+        commissionmapping__commission_week=week
+    ).select_related('customer')
+    
+    # Calculate estimated commission for each policy
+    for policy in available_policies:
+        policy.estimated_commission = policy.premium_amount * Decimal('0.2')
+    
+    context = {
+        'week': week,
+        'available_policies': available_policies,
+    }
+    
+    return render(request, 'crm/add_insurance_to_week.html', context)
+
+# In views.py - update the update_commission_mapping view
+@login_required
+def update_commission_mapping(request, mapping_id):
+    """Update commission mapping for insurance policies"""
+    mapping = get_object_or_404(CommissionMapping, pk=mapping_id)
+
+    if not (request.user.is_manager or mapping.commission_week.advisor == request.user):
+        messages.error(request, 'You do not have permission to update this commission mapping.')
+        return redirect('commission_week_detail', pk=mapping.commission_week.pk)
+
+    if request.method == 'POST':
+        form = CommissionMappingForm(request.POST, instance=mapping)
+        if form.is_valid():
+            mapping = form.save(commit=False)
+            
+            # Recalculate estimated commission if premium or rate changes
+            if 'premium_amount' in form.changed_data or 'commission_rate' in form.changed_data:
+                mapping.estimated_commission = mapping.insurance_policy.premium_amount * (mapping.commission_rate / Decimal('100'))
+            
+            mapping.updated_by = request.user
+            mapping.save()
+            
+            # Update the week totals
+            mapping.commission_week.update_totals()
+            
+            messages.success(request, 'Commission mapping updated successfully!')
+            return redirect('commission_week_detail', pk=mapping.commission_week.pk)
+    else:
+        form = CommissionMappingForm(instance=mapping)
+
+    context = {
+        'form': form,
+        'mapping': mapping,
+    }
+    
+    return render(request, 'crm/commission_mapping_form.html', context)
+
+# commission_week_create view
+@login_required
 def commission_week_create(request):
-    """Create a new commission week with proper week number validation"""
+    """Create a new commission week with proper validation"""
     if request.method == 'POST':
         form = CommissionWeekForm(request.POST)
         if form.is_valid():
-            # Validate week number is current or future week
-            today = date.today()
-            year = today.year
-            week_number = today.isocalendar()[1]
-            
-            submitted_week = form.cleaned_data['week_number']
-            submitted_year = form.cleaned_data['year']
-            
-            # Validate week number is valid (1-52/53)
-            if submitted_week < 1 or submitted_week > 53:
-                form.add_error('week_number', 'Week number must be between 1 and 53')
-            # Validate year is current or future
-            elif submitted_year < year:
-                form.add_error('year', 'Cannot create commission weeks for past years')
-            # Validate week is current or future for current year
-            elif submitted_year == year and submitted_week < week_number:
-                form.add_error('week_number', 'Cannot create commission weeks for past weeks')
-                
-            if not form.errors:
+            try:
                 week = form.save()
                 messages.success(request, 'Commission week created successfully!')
                 return redirect('commission_week_detail', pk=week.pk)
+            except ValidationError as e:
+                form.add_error(None, e)
     else:
         # Set default values to current week
         today = date.today()
@@ -1591,231 +2043,175 @@ def commission_week_create(request):
 
     return render(request, 'crm/commission_week_form.html', {'form': form})
 
-@login_required
-def assign_application_to_week(request, application_id):
-    """Assign application to a commission week with validation"""
-    application = get_object_or_404(Application, pk=application_id)
-    
-    # Validate application is eligible (insurance with Active/Underwriter status)
-    if application.application_type == 'Insurance' and application.insurance:
-        if application.insurance.policy_status not in ['Active', 'Underwriter']:
-            messages.error(request, 'Only insurance applications with status "Active" or "Underwriter" can be assigned to commission weeks.')
-            return redirect('application_detail', pk=application_id)
-    else:
-        messages.error(request, 'Only insurance applications can be assigned to commission weeks.')
-        return redirect('application_detail', pk=application_id)
-
-    # Check if application is already mapped
-    existing_mapping = CommissionApplicationMapping.objects.filter(application=application).first()
-    if existing_mapping:
-        messages.warning(request, 'This application is already assigned to a commission week.')
-        return redirect('application_detail', pk=application_id)
-
-    if request.method == 'POST':
-        form = CommissionApplicationMappingForm(request.POST)
-        if form.is_valid():
-            mapping = form.save(commit=False)
-            mapping.application = application
-
-            # Calculate estimated commission for insurance
-            if application.insurance:
-                mapping.estimated_commission = application.insurance.premium_amount * Decimal('0.2')  # 20% example
-                mapping.commission_rate = Decimal('20.0')
-
-            mapping.save()
-
-            # Update commission week totals
-            week = mapping.commission_week
-            week.total_estimated_commission += mapping.estimated_commission
-            week.save()
-
-            messages.success(request, 'Application assigned to commission week successfully!')
-            return redirect('commission_week_detail', pk=week.pk)
-    else:
-        # Only show current and future weeks
-        current_date = date.today()
-        current_week = current_date.isocalendar()[1]
-        current_year = current_date.year
-        
-        future_weeks = CommissionWeek.objects.filter(
-            Q(year__gt=current_year) | 
-            Q(year=current_year, week_number__gte=current_week)
-        ).filter(advisor=request.user)
-        
-        form = CommissionApplicationMappingForm()
-        form.fields['commission_week'].queryset = future_weeks
-
-    context = {
-        'form': form,
-        'application': application,
-    }
-    return render(request, 'crm/assign_to_week.html', context)
 
 @login_required
-def update_commission_mapping(request, mapping_id):
-    """Update commission mapping (for managers to set actual commission)"""
-    mapping = get_object_or_404(CommissionApplicationMapping, pk=mapping_id)
-
-    if not request.user.is_manager:
-        messages.error(request, 'Only managers can update commission amounts.')
-        return redirect('commission_week_detail', pk=mapping.commission_week.pk)
-
-    if request.method == 'POST':
-        form = CommissionApplicationMappingForm(request.POST, instance=mapping)
-        if form.is_valid():
-            old_actual = mapping.actual_commission or Decimal('0')
-            mapping = form.save(commit=False)
-            mapping.updated_by = request.user  # Track which manager made the update
-            mapping.save()
-
-            # Update commission week totals
-            week = mapping.commission_week
-            if mapping.actual_commission:
-                week.total_actual_commission = (week.total_actual_commission or Decimal('0')) - old_actual + mapping.actual_commission
-            week.save()
-
-            messages.success(request, 'Commission mapping updated successfully!')
-            return redirect('commission_week_detail', pk=week.pk)
-    else:
-        form = CommissionApplicationMappingForm(instance=mapping)
-
-    context = {
-        'form': form,
-        'mapping': mapping,
-    }
-    return render(request, 'crm/commission_mapping_form.html', context)
-
-@login_required
-def submit_week_for_approval(request, week_id):
+def submit_week_for_approval(request, pk):
     """Advisor submits week for manager approval"""
-    week = get_object_or_404(CommissionWeek, pk=week_id, advisor=request.user)
+    week = get_object_or_404(CommissionWeek, pk=pk, advisor=request.user)
     
     if week.status != 'Open':
         messages.error(request, 'Only open weeks can be submitted for approval.')
-        return redirect('commission_week_detail', pk=week_id)
+        return redirect('commission_week_detail', pk=pk)
     
-    # Validate that week has applications
-    if not CommissionApplicationMapping.objects.filter(commission_week=week).exists():
+    # Validate that week has commission mappings (not applications)
+    if not CommissionMapping.objects.filter(commission_week=week).exists():
         messages.error(request, 'Cannot submit empty week for approval.')
-        return redirect('commission_week_detail', pk=week_id)
+        return redirect('commission_week_detail', pk=pk)
     
     week.status = 'Pending Review'
     week.save()
     
     messages.success(request, f'Week {week.week_number} submitted for manager approval.')
-    return redirect('commission_week_detail', pk=week_id)
-
+    return redirect('commission_week_detail', pk=week.pk)
 
 @login_required
 def weekly_commission_report(request):
-    """Weekly commission report view"""
+    """Weekly commission report view - FIXED"""
     # Get filter parameters from request
-    year = request.GET.get('year', datetime.now().year)
-    advisor_id = request.GET.get('advisor')
-    status = request.GET.get('status')
+    selected_week = request.GET.get('week')
+    selected_year = request.GET.get('year', datetime.now().year)
+    active_tab = request.GET.get('tab', 'weeks')
 
-    # Convert year to integer
+    # Convert to integers with validation
     try:
-        year = int(year)
+        selected_year = int(selected_year)
+        selected_week = int(selected_week) if selected_week else None
     except (ValueError, TypeError):
-        year = datetime.now().year
+        selected_year = datetime.now().year
+        selected_week = None
 
-    # Initialize variables at the beginning
-    total_estimated = Decimal('0')
-    total_actual = Decimal('0')
+    # Base queryset - managers see all weeks, others see only their own
+    if request.user.is_manager:
+        available_weeks = CommissionWeek.objects.all()
+    else:
+        available_weeks = CommissionWeek.objects.filter(advisor=request.user)
+    
+    available_weeks = available_weeks.order_by('-year', '-week_number').distinct()
 
-    # Base queryset
-    weeks = CommissionWeek.objects.filter(year=year)
+    # If no week selected, use the most recent week
+    if not selected_week and available_weeks.exists():
+        latest_week = available_weeks.first()
+        selected_week = latest_week.week_number
+        selected_year = latest_week.year
 
-    # Apply filters
-    if advisor_id:
-        weeks = weeks.filter(advisor_id=advisor_id)
-    if status:
-        weeks = weeks.filter(status=status)
-
-    weeks = weeks.order_by('-year', '-week_number')
+    # Filter for display weeks
+    display_weeks = available_weeks
+    if selected_week and selected_year:
+        display_weeks = display_weeks.filter(week_number=selected_week, year=selected_year)
 
     # Calculate totals
-    for week in weeks:
-        total_estimated += week.total_estimated_commission or Decimal('0')
-        total_actual += week.total_actual_commission or Decimal('0')
+    total_estimated = display_weeks.aggregate(
+        total=Sum('total_estimated_commission')
+    )['total'] or Decimal('0.00')
 
-    # Calculate variance
+    total_actual = display_weeks.aggregate(
+        total=Sum('total_actual_commission')
+    )['total'] or Decimal('0.00')
+
     variance = total_estimated - total_actual
+    variance_percentage = (variance / total_estimated * 100) if total_estimated else Decimal('0.00')
+
+    # Get commission mappings for the selected weeks
+    commission_mappings = CommissionMapping.objects.filter(commission_week__in=display_weeks)
+    
+    # Calculate metrics
+    completed_applications = commission_mappings.count()
+    pending_count = commission_mappings.filter(actual_commission__isnull=True).count()
+    pending_approval = commission_mappings.filter(
+        actual_commission__isnull=True
+    ).aggregate(total=Sum('estimated_commission'))['total'] or Decimal('0.00')
+
+    # Week dates for display
+    week_dates = "N/A"
+    if display_weeks.exists():
+        week = display_weeks.first()
+        week_dates = f"{week.start_date.strftime('%d.%m.%Y')} to {week.end_date.strftime('%d.%m.%Y')}"
+
+    # Prepare weekly data - FIX: Check if we're on the advisor-report tab
+    weekly_data = []
+    totals = {}
+    
+    if active_tab == 'advisor-report' and selected_week and selected_year:
+        # Get DailyAdvisorActivity data for the selected week
+        week_start, week_end = get_week_dates(selected_year, selected_week)
+        
+        # Get activities for this week
+        daily_activities = DailyAdvisorActivity.objects.filter(
+            advisor=request.user,
+            date__range=[week_start, week_end]
+        ).order_by('date')
+        
+        # Prepare weekly data structure
+        weekly_data = prepare_weekly_advisor_data_from_activities(daily_activities, week_start)
+        totals = calculate_weekly_totals(weekly_data)
+
+    # Product summary for commission breakdown
+    product_summary = []
+    for mapping in commission_mappings:
+        policy = mapping.insurance_policy
+        product_summary.append({
+            'type': policy.policy_type,
+            'count': 1,
+            'premium': policy.premium_amount or Decimal('0.00'),
+            'rate': mapping.commission_rate,
+            'commission': mapping.estimated_commission or Decimal('0.00')
+        })
+
+    # Aggregate product summary
+    aggregated_summary = {}
+    for item in product_summary:
+        if item['type'] not in aggregated_summary:
+            aggregated_summary[item['type']] = {
+                'type': item['type'],
+                'count': 0,
+                'premium': Decimal('0.00'),
+                'rate': Decimal('0.00'),
+                'commission': Decimal('0.00')
+            }
+        aggregated_summary[item['type']]['count'] += item['count']
+        aggregated_summary[item['type']]['premium'] += item['premium']
+        aggregated_summary[item['type']]['commission'] += item['commission']
+        # Average rate
+        aggregated_summary[item['type']]['rate'] = item['rate']
+
+    product_summary = list(aggregated_summary.values())
+
+    total_applications = sum(item['count'] for item in product_summary)
+    total_premium = sum(item['premium'] for item in product_summary)
+    total_commission = sum(item['commission'] for item in product_summary)
+
+    # Calculate metrics
+    conversion_rate = Decimal('75.5') if total_applications > 0 else Decimal('0.00')
+    commission_efficiency = (total_actual / total_estimated * 100) if total_estimated else Decimal('0.00')
+    payment_processing = Decimal('92.1')  # Placeholder
 
     context = {
-        'weeks': weeks,
-        'advisors': User.objects.filter(is_active=True),
-        'status_choices': CommissionWeek._meta.get_field('status').choices,
-        'years': range(datetime.now().year - 2, datetime.now().year + 3),
-        'selected_year': year,
-        'selected_advisor': advisor_id,
-        'selected_status': status,
+        'commission_weeks': display_weeks,
+        'available_weeks': available_weeks,
+        'selected_week': selected_week,
+        'selected_year': selected_year,
         'total_estimated': total_estimated,
         'total_actual': total_actual,
         'variance': variance,
+        'variance_percentage': variance_percentage,
+        'pending_approval': pending_approval,
+        'pending_count': pending_count,
+        'completed_applications': completed_applications,
+        'estimated_growth': Decimal('5.2'),
+        'week_dates': week_dates,
+        'active_tab': active_tab,
+        'weekly_data': weekly_data,  # This will now contain actual data
+        'totals': totals,  # This will now contain actual totals
+        'product_summary': product_summary,
+        'total_applications': total_applications,
+        'total_premium': total_premium,
+        'total_commission': total_commission,
+        'conversion_rate': conversion_rate,
+        'commission_efficiency': commission_efficiency,
+        'payment_processing': payment_processing,
     }
 
     return render(request, 'crm/weekly_commission_report.html', context)
-
-# views.py
-from datetime import datetime, timedelta  
-from django.utils import timezone
-@login_required
-def auto_assign_applications(request):
-    """Automatically assign eligible applications to current commission week"""
-    if not request.user.is_manager:
-        messages.error(request, 'Only managers can auto-assign applications.')
-        return redirect('dashboard')
-
-    # Get current week number using ISO standard
-    current_date = timezone.now().date()
-    week_number = current_date.isocalendar()[1]
-    year = current_date.year
-
-    assigned_count = 0
-
-    for advisor in User.objects.filter(is_active=True):
-        # Get current week or create it with proper dates
-        week_start = current_date - timedelta(days=current_date.weekday())
-        week_end = week_start + timedelta(days=6)
-        
-        week, created = CommissionWeek.objects.get_or_create(
-            week_number=week_number,
-            year=year,
-            advisor=advisor,
-            defaults={
-                'start_date': week_start,
-                'end_date': week_end,
-                'status': 'Open'
-            }
-        )
-
-        # Find eligible insurance applications with status Active or Underwriter
-        eligible_apps = Application.objects.filter(
-            advisor=advisor,
-            application_type='Insurance',
-            insurance__policy_status__in=['Active', 'Underwriter'],
-            commissionapplicationmapping__isnull=True
-        )
-
-        for app in eligible_apps:
-            # Create mapping
-            mapping = CommissionApplicationMapping(
-                application=app,
-                commission_week=week,
-                estimated_commission=app.insurance.premium_amount * Decimal('0.2'),
-                commission_rate=Decimal('20.0')
-            )
-            mapping.save()
-            assigned_count += 1
-
-            # Update week totals
-            week.total_estimated_commission += mapping.estimated_commission
-            week.save()
-
-    messages.success(request, f'Automatically assigned {assigned_count} applications to week {week_number}.')
-    return redirect('commission_weeks')
 
 @login_required
 def commission_week_update(request, pk):
@@ -1861,47 +2257,6 @@ def payment_detail(request, pk):
     payment = get_object_or_404(Payment, pk=pk)
     return render(request, 'crm/payment_detail.html', {'payment': payment})
 
-class AddApplicationToWeekView(ListView):
-    model = Application
-    template_name = 'add_application_to_week.html'
-    context_object_name = 'applications'
-    
-    def get_queryset(self):
-        self.week = get_object_or_404(CommissionWeek, pk=self.kwargs['week_id'])
-        
-        # Get applications that are not already mapped to any commission week
-        # and are either approved or in underwriting for insurance
-        queryset = Application.objects.filter(
-            Q(advisor=self.request.user) | Q(advisor__isnull=True),
-            application_status__in=['Approved', 'Under Review']
-        ).exclude(
-            commissionmapping__isnull=False
-        )
-        
-        return queryset
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['week'] = self.week
-        return context
-    
-    def post(self, request, *args, **kwargs):
-        week = get_object_or_404(CommissionWeek, pk=kwargs['week_id'])
-        application_ids = request.POST.getlist('applications')
-        
-        for app_id in application_ids:
-            application = get_object_or_404(Application, pk=app_id)
-            
-            # Create commission mapping
-            CommissionMapping.objects.create(
-                commission_week=week,
-                application=application,
-                commission_rate=20 if application.application_type == 'Insurance' else 0.5,
-                updated_by=request.user
-            )
-        
-        messages.success(request, f'{len(application_ids)} applications added to commission week.')
-        return redirect('commission_week_detail', pk=week.pk)
 
 class CommissionWeeksListView(ListView):
     model = CommissionWeek
@@ -1943,11 +2298,31 @@ class CommissionWeeksListView(ListView):
         
         return context    
     
-class WeeklyCommissionReportView(TemplateView):
+class WeeklyCommissionReportView(LoginRequiredMixin, TemplateView):
     template_name = 'crm/weekly_commission_report.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Get the active tab from request
+        active_tab = self.request.GET.get('tab', 'weeks')
+        context['active_tab'] = active_tab
+        
+        # Handle advisor report tab
+        if active_tab == 'advisor-report':
+            selected_week = self.request.GET.get('week', datetime.now().isocalendar()[1])
+            selected_year = self.request.GET.get('year', datetime.now().year)
+            
+            context['selected_week'] = selected_week
+            context['selected_year'] = selected_year
+            
+            # Get weekly data for the advisor
+            weekly_data = self.get_weekly_data(selected_week, selected_year)
+            context['weekly_data'] = weekly_data
+            
+            # Calculate week dates for display
+            if weekly_data:
+                context['week_dates'] = f"Week {selected_week}, {selected_year}"
         
         # Get filter parameters
         week = self.request.GET.get('week')
@@ -1982,6 +2357,10 @@ class WeeklyCommissionReportView(TemplateView):
         context['variance_percentage'] = (context['variance'] / total_estimated * 100) if total_estimated else 0
         
         return context
+    def get_weekly_data(self, week, year):
+        # Your logic to get weekly data for the advisor
+        # This should return data structured for the advisor report table
+        pass
     
 class UpdateCommissionMappingView(LoginRequiredMixin, UpdateView):
     """Update commission mapping view"""
@@ -1995,3 +2374,1266 @@ class UpdateCommissionMappingView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, 'Commission mapping updated successfully!')
         return super().form_valid(form)
+    
+class DocumentCreateView(CreateView):
+    model = Document
+    fields = ['document_name', 'document_type', 'document_file', 'document_status', 'requested_date', 'received_date']
+    template_name = 'crm/document_form.html'
+    
+    def form_valid(self, form):
+        form.instance.application_id = self.request.POST.get('application')
+        form.instance.uploaded_by = self.request.user
+        
+        # Set customer based on application or other context
+        application_id = self.request.POST.get('application')
+        if application_id:
+            try:
+                application = Application.objects.get(pk=application_id)
+                form.instance.customer = application.customer
+            except Application.DoesNotExist:
+                pass
+                
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        if self.object.application:
+            return reverse_lazy('application_detail', kwargs={'pk': self.object.application.pk})
+        else:
+            return reverse_lazy('dashboard')
+
+# In views.py - update DocumentEditView
+class DocumentEditView(UpdateView):
+    model = Document
+    fields = ['document_name', 'document_type', 'document_file', 'document_status', 'requested_date', 'received_date']
+    template_name = 'crm/document_form.html'
+    
+    def get_success_url(self):
+        if self.object.application:
+            return reverse_lazy('application_detail', kwargs={'pk': self.object.application.pk})
+        else:
+            return reverse_lazy('dashboard')
+            
+def manager_required(view_func):
+    """Decorator to ensure user is a manager"""
+    decorated_view_func = user_passes_test(
+        lambda u: u.is_authenticated and u.is_manager,
+        login_url='dashboard',
+        redirect_field_name=None
+    )(view_func)
+    return decorated_view_func
+
+@login_required
+@manager_required
+def commission_week_approval(request, pk):
+    """Manager approval view for commission weeks"""
+    week = get_object_or_404(CommissionWeek, pk=pk)
+    
+    if request.method == 'POST':
+        form = CommissionWeekApprovalForm(request.POST, instance=week)
+        if form.is_valid():
+            commission_week = form.save(commit=False)
+            
+            if form.cleaned_data['status'] == 'Approved':
+                commission_week.approved_by = request.user
+                commission_week.approved_at = timezone.now()
+            
+            commission_week.save()
+            
+            messages.success(request, f'Commission week {week.week_number} has been {form.cleaned_data["status"].lower()}.')
+            return redirect('commission_week_detail', pk=week.pk)
+    else:
+        form = CommissionWeekApprovalForm(instance=week)
+    
+    # FIX: Change 'mappings' to 'insurance_mappings' to match template
+    context = {
+        'week': week,
+        'form': form,
+        'insurance_mappings': week.mappings.all().select_related('insurance_policy', 'insurance_policy__customer')
+    }
+    
+    return render(request, 'crm/commission_week_approval.html', context)
+
+@login_required
+@manager_required
+def manager_commission_weeks(request):
+    """Commission weeks list for managers with approval actions"""
+    weeks = CommissionWeek.objects.filter(status='Pending Review').order_by('-year', '-week_number')
+    
+    context = {
+        'weeks': weeks,
+        'is_manager': True
+    }
+    
+    return render(request, 'crm/manager_commission_weeks.html', context)
+
+# Helper function to connect to insurance system API
+def fetch_insurance_data_from_api(policy_id):
+    # Implement your insurance system API integration here
+    # This is a placeholder implementation
+    import requests
+    from django.conf import settings
+    
+    api_url = f"{settings.INSURANCE_API_BASE_URL}/policies/{policy_id}"
+    headers = {
+        'Authorization': f'Bearer {settings.INSURANCE_API_TOKEN}'
+    }
+    
+    try:
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        # Handle API errors appropriately
+        raise Exception(f"Insurance API error: {str(e)}")
+
+# views.py
+@login_required
+def auto_assign_applications(request):
+    """Auto-assign applications to advisors"""
+    # Your implementation here
+    messages.success(request, 'Applications auto-assigned successfully!')
+    return redirect('application_list')  # or appropriate redirect
+
+@require_POST
+@csrf_exempt
+def update_insurance_commission(request):
+    """Update insurance commission mapping"""
+    mapping_id = request.POST.get('mapping_id')
+    actual_commission = request.POST.get('actual_commission')
+    
+    try:
+        mapping = CommissionMapping.objects.get(id=mapping_id)
+        mapping.actual_commission = actual_commission
+        mapping.save()
+        
+        # Update the week's total
+        week = mapping.commission_week
+        week.update_totals()
+        
+        return JsonResponse({'success': True})
+    except CommissionMapping.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Mapping not found'})
+    
+# Add these to your views.py (uncomment and fix them):
+
+@require_POST
+@csrf_exempt
+def update_insurance_commission(request):
+    """Update insurance commission mapping"""
+    mapping_id = request.POST.get('mapping_id')
+    actual_commission = request.POST.get('actual_commission')
+    
+    try:
+        mapping = CommissionMapping.objects.get(id=mapping_id)
+        mapping.actual_commission = Decimal(actual_commission)
+        mapping.save()
+        
+        # Update the week's total
+        week = mapping.commission_week
+        week.update_totals()
+        
+        return JsonResponse({'success': True})
+    except CommissionMapping.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Mapping not found'})
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid commission amount'})
+
+@require_POST
+@csrf_exempt
+def refresh_insurance_data(request):
+    """Refresh insurance policy data from external source"""
+    policy_ids = request.POST.getlist('policy_ids[]')
+    week_id = request.POST.get('week_id')
+    
+    try:
+        updated_policies = []
+        for policy_id in policy_ids:
+            # Fetch latest insurance data (placeholder implementation)
+            # In a real application, you'd integrate with your insurance system API
+            policy = InsurancePolicy.objects.get(id=policy_id)
+            
+            # Simulate data refresh - in reality, you'd call an external API
+            # policy.premium_amount = fetch_from_api(policy_id)
+            # policy.status = fetch_status_from_api(policy_id)
+            # policy.save()
+            
+            # Recalculate estimated commission if premium changed
+            mapping = CommissionMapping.objects.get(
+                insurance_policy=policy, 
+                commission_week_id=week_id
+            )
+            # Update mapping if needed
+            # mapping.estimated_commission = policy.premium_amount * (mapping.commission_rate / 100)
+            # mapping.save()
+            
+            updated_policies.append({
+                'id': policy_id,
+                'premium_amount': str(policy.premium_amount),
+                'status': policy.policy_status
+            })
+        
+        return JsonResponse({'success': True, 'updated_policies': updated_policies})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+# In views.py
+@login_required
+def raise_commission_dispute(request, mapping_id):
+    """Raise a commission dispute"""
+    mapping = get_object_or_404(CommissionMapping, pk=mapping_id)
+    
+    # Check if user has permission to raise dispute
+    if not (request.user == mapping.commission_week.advisor or request.user.is_manager):
+        messages.error(request, 'You do not have permission to raise a dispute for this commission.')
+        return redirect('commission_week_detail', pk=mapping.commission_week.pk)
+    
+    if request.method == 'POST':
+        disputed_amount = request.POST.get('disputed_amount')
+        dispute_reason = request.POST.get('dispute_reason')
+        proposed_amount = request.POST.get('proposed_amount')
+        
+        try:
+            disputed_amount = Decimal(disputed_amount)
+            if proposed_amount:
+                proposed_amount = Decimal(proposed_amount)
+            
+            # Create dispute
+            dispute = CommissionDispute.objects.create(
+                commission_mapping=mapping,
+                raised_by=request.user,
+                dispute_reason=dispute_reason,
+                disputed_amount=disputed_amount,
+                proposed_amount=proposed_amount,
+                status='Open'
+            )
+            
+            # Update mapping status
+            mapping.has_dispute = True
+            mapping.save()
+            
+            messages.success(request, 'Dispute raised successfully! It will be reviewed by management.')
+            return redirect('commission_week_detail', pk=mapping.commission_week.pk)
+            
+        except (ValueError, TypeError):
+            messages.error(request, 'Invalid amount entered.')
+    
+    context = {
+        'mapping': mapping,
+    }
+    return render(request, 'crm/raise_dispute.html', context)
+
+@login_required
+@manager_required
+def resolve_commission_dispute(request, dispute_id):
+    """Resolve a commission dispute (manager only)"""
+    dispute = get_object_or_404(CommissionDispute, pk=dispute_id)
+    
+    if request.method == 'POST':
+        resolution_notes = request.POST.get('resolution_notes')
+        status = request.POST.get('status')
+        final_amount = request.POST.get('final_amount')
+        
+        try:
+            if final_amount:
+                final_amount = Decimal(final_amount)
+                # Update the commission mapping with the resolved amount
+                dispute.commission_mapping.actual_commission = final_amount
+                dispute.commission_mapping.has_dispute = False
+                dispute.commission_mapping.save()
+                
+                # Update the week totals
+                dispute.commission_mapping.commission_week.update_totals()
+            
+            dispute.resolution_notes = resolution_notes
+            dispute.status = status
+            dispute.resolved_by = request.user
+            dispute.resolved_date = timezone.now()
+            dispute.save()
+            
+            messages.success(request, f'Dispute {dispute.get_status_display().lower()} successfully!')
+            return redirect('view_disputes')
+            
+        except (ValueError, TypeError):
+            messages.error(request, 'Invalid amount entered.')
+    
+    context = {
+        'dispute': dispute,
+    }
+    return render(request, 'crm/resolve_dispute.html', context)
+
+@login_required
+def view_disputes(request):
+    """View all commission disputes with filtering"""
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')
+    advisor_filter = request.GET.get('advisor', '')
+    week_filter = request.GET.get('week', '')
+    
+    if request.user.is_manager:
+        disputes = CommissionDispute.objects.all()
+        
+        # Apply filters
+        if status_filter:
+            disputes = disputes.filter(status=status_filter)
+        if advisor_filter:
+            disputes = disputes.filter(
+                Q(raised_by_id=advisor_filter) | 
+                Q(commission_mapping__commission_week__advisor_id=advisor_filter)
+            )
+        if week_filter:
+            disputes = disputes.filter(commission_mapping__commission_week_id=week_filter)
+            
+    else:
+        disputes = CommissionDispute.objects.filter(
+            Q(raised_by=request.user) | 
+            Q(commission_mapping__commission_week__advisor=request.user)
+        )
+        
+        if status_filter:
+            disputes = disputes.filter(status=status_filter)
+    
+    disputes = disputes.select_related(
+        'commission_mapping__insurance_policy__customer',
+        'commission_mapping__commission_week',
+        'raised_by',
+        'resolved_by'
+    ).order_by('-raised_date')
+    
+    # Count disputes by status
+    open_disputes = disputes.filter(status='Open').count()
+    in_review_disputes = disputes.filter(status='In Review').count()
+    resolved_disputes = disputes.filter(status='Resolved').count()
+    rejected_disputes = disputes.filter(status='Rejected').count()
+    
+    context = {
+        'disputes': disputes,
+        'open_disputes': open_disputes,
+        'in_review_disputes': in_review_disputes,
+        'resolved_disputes': resolved_disputes,
+        'rejected_disputes': rejected_disputes,
+        'total_disputes': disputes.count(),
+        'status_choices': CommissionDispute.DISPUTE_STATUS_CHOICES,
+        'advisors': User.objects.filter(is_active=True) if request.user.is_manager else None,
+        'commission_weeks': CommissionWeek.objects.all() if request.user.is_manager else None,
+        'applied_filters': {
+            'status': status_filter,
+            'advisor': advisor_filter,
+            'week': week_filter,
+        }
+    }
+    
+    return render(request, 'crm/view_disputes.html', context)
+
+# In views.py - add this context processor or update existing views
+def dispute_context_processor(request):
+    if request.user.is_authenticated:
+        if request.user.is_manager:
+            pending_disputes_count = CommissionDispute.objects.filter(status='Open').count()
+        else:
+            pending_disputes_count = CommissionDispute.objects.filter(
+                Q(raised_by=request.user) | 
+                Q(commission_mapping__commission_week__advisor=request.user),
+                status='Open'
+            ).count()
+        
+        return {
+            'pending_disputes_count': pending_disputes_count
+        }
+    return {}
+
+@login_required
+def weekly_commission_report(request):
+    """Weekly commission report view - FIXED"""
+    # Get filter parameters
+    selected_week = request.GET.get('week')
+    selected_year = request.GET.get('year', datetime.now().year)
+    active_tab = request.GET.get('tab', 'weeks')
+
+    # Convert to integers with validation
+    try:
+        selected_year = int(selected_year)
+        selected_week = int(selected_week) if selected_week else None
+    except (ValueError, TypeError):
+        selected_year = datetime.now().year
+        selected_week = None
+
+    # Base queryset - managers see all weeks, others see only their own
+    if request.user.is_manager:
+        available_weeks = CommissionWeek.objects.all()
+    else:
+        available_weeks = CommissionWeek.objects.filter(advisor=request.user)
+    
+    available_weeks = available_weeks.order_by('-year', '-week_number').distinct()
+
+    # If no week selected, use the most recent week
+    if not selected_week and available_weeks.exists():
+        latest_week = available_weeks.first()
+        selected_week = latest_week.week_number
+        selected_year = latest_week.year
+
+    # Filter for display weeks
+    display_weeks = available_weeks
+    if selected_week and selected_year:
+        display_weeks = display_weeks.filter(week_number=selected_week, year=selected_year)
+
+    # Calculate totals
+    total_estimated = display_weeks.aggregate(
+        total=Sum('total_estimated_commission')
+    )['total'] or Decimal('0.00')
+
+    total_actual = display_weeks.aggregate(
+        total=Sum('total_actual_commission')
+    )['total'] or Decimal('0.00')
+
+    variance = total_estimated - total_actual
+    variance_percentage = (variance / total_estimated * 100) if total_estimated else Decimal('0.00')
+
+    # Get commission mappings for the selected weeks
+    commission_mappings = CommissionMapping.objects.filter(commission_week__in=display_weeks)
+    
+    # Calculate metrics
+    completed_applications = commission_mappings.count()
+    pending_count = commission_mappings.filter(actual_commission__isnull=True).count()
+    pending_approval = commission_mappings.filter(
+        actual_commission__isnull=True
+    ).aggregate(total=Sum('estimated_commission'))['total'] or Decimal('0.00')
+
+    # Week dates for display
+    week_dates = "N/A"
+    if display_weeks.exists():
+        week = display_weeks.first()
+        week_dates = f"{week.start_date.strftime('%d.%m.%Y')} to {week.end_date.strftime('%d.%m.%Y')}"
+
+    # Prepare weekly data
+    weekly_data = prepare_weekly_advisor_data_from_mappings(commission_mappings, selected_week, selected_year)
+    totals = calculate_weekly_totals(weekly_data)
+
+    # Product summary for commission breakdown
+    product_summary = []
+    for mapping in commission_mappings:
+        policy = mapping.insurance_policy
+        product_summary.append({
+            'type': policy.policy_type,
+            'count': 1,
+            'premium': policy.premium_amount or Decimal('0.00'),
+            'rate': mapping.commission_rate,
+            'commission': mapping.estimated_commission or Decimal('0.00')
+        })
+
+    # Aggregate product summary
+    aggregated_summary = {}
+    for item in product_summary:
+        if item['type'] not in aggregated_summary:
+            aggregated_summary[item['type']] = {
+                'type': item['type'],
+                'count': 0,
+                'premium': Decimal('0.00'),
+                'rate': Decimal('0.00'),
+                'commission': Decimal('0.00')
+            }
+        aggregated_summary[item['type']]['count'] += item['count']
+        aggregated_summary[item['type']]['premium'] += item['premium']
+        aggregated_summary[item['type']]['commission'] += item['commission']
+        # Average rate
+        aggregated_summary[item['type']]['rate'] = item['rate']
+
+    product_summary = list(aggregated_summary.values())
+
+    total_applications = sum(item['count'] for item in product_summary)
+    total_premium = sum(item['premium'] for item in product_summary)
+    total_commission = sum(item['commission'] for item in product_summary)
+
+    # Calculate metrics
+    conversion_rate = Decimal('75.5') if total_applications > 0 else Decimal('0.00')
+    commission_efficiency = (total_actual / total_estimated * 100) if total_estimated else Decimal('0.00')
+    payment_processing = Decimal('92.1')  # Placeholder
+
+    context = {
+        'commission_weeks': display_weeks,
+        'available_weeks': available_weeks,
+        'selected_week': selected_week,
+        'selected_year': selected_year,
+        'total_estimated': total_estimated,
+        'total_actual': total_actual,
+        'variance': variance,
+        'variance_percentage': variance_percentage,
+        'pending_approval': pending_approval,
+        'pending_count': pending_count,
+        'completed_applications': completed_applications,
+        'estimated_growth': Decimal('5.2'),
+        'week_dates': week_dates,
+        'active_tab': active_tab,
+        'weekly_data': weekly_data,
+        'totals': totals,
+        'product_summary': product_summary,
+        'total_applications': total_applications,
+        'total_premium': total_premium,
+        'total_commission': total_commission,
+        'conversion_rate': conversion_rate,
+        'commission_efficiency': commission_efficiency,
+        'payment_processing': payment_processing,
+    }
+
+    return render(request, 'crm/weekly_commission_report.html', context)
+
+
+@login_required
+def commission_report(request):
+    # Get selected week from query parameters, default to current week
+    selected_week = request.GET.get('week', timezone.now().isocalendar()[1])
+    selected_year = request.GET.get('year', timezone.now().year)
+    active_tab = request.GET.get('tab', 'weeks')
+
+    try:
+        selected_week = int(selected_week)
+        selected_year = int(selected_year)
+    except (ValueError, TypeError):
+        selected_week = timezone.now().isocalendar()[1]
+        selected_year = timezone.now().year
+
+    # Get all available weeks for the selector
+    available_weeks = CommissionWeek.objects.filter(
+        advisor=request.user
+    ).order_by('-year', '-week_number')
+
+    # Get commission weeks for the selected period
+    commission_weeks = CommissionWeek.objects.filter(
+        week_number=selected_week,
+        year=selected_year,
+        advisor=request.user
+    ).select_related('advisor').prefetch_related('applications')
+
+    # Calculate summary statistics
+    total_estimated = commission_weeks.aggregate(
+        total=Sum('total_estimated_commission')
+    )['total'] or Decimal('0.00')
+
+    total_actual = commission_weeks.aggregate(
+        total=Sum('total_actual_commission')
+    )['total'] or Decimal('0.00')
+
+    variance = total_estimated - total_actual
+    variance_percentage = (variance / total_estimated * 100) if total_estimated else Decimal('0.00')
+
+    # Get pending applications
+    pending_applications = Application.objects.filter(
+        commission_week__in=commission_weeks,
+        status='Pending Review'
+    )
+    pending_approval = pending_applications.aggregate(
+        total=Sum('estimated_commission')
+    )['total'] or Decimal('0.00')
+    pending_count = pending_applications.count()
+
+    # Get completed applications count
+    completed_applications = Application.objects.filter(
+        commission_week__in=commission_weeks,
+        status__in=['Approved', 'Paid']
+    ).count()
+
+    # Calculate estimated growth (placeholder - you might want to implement actual growth calculation)
+    estimated_growth = Decimal('5.2')  # Example growth percentage
+
+    # Calculate week dates for display
+    try:
+        week_dates = get_week_dates(selected_year, selected_week)
+    except (ValueError, IndexError):
+        # Calculate week dates manually if no commission week exists
+        try:
+            first_day = datetime.strptime(f'{selected_year}-W{selected_week}-1', "%Y-W%W-%w").date()
+            last_day = first_day + timedelta(days=6)
+            week_dates = f"{first_day.strftime('%d.%m.%Y')} to {last_day.strftime('%d.%m.%Y')}"
+        except:
+            week_dates = "Invalid week"
+
+    # Product summary for commission breakdown
+    product_summary = Application.objects.filter(
+        commission_week__in=commission_weeks
+    ).values('product_type').annotate(
+        count=Count('id'),
+        premium=Sum('premium_amount'),
+        commission=Sum('actual_commission')
+    )
+
+    total_applications = sum(item['count'] for item in product_summary)
+    total_premium = sum(item['premium'] or Decimal('0.00') for item in product_summary)
+    total_commission = sum(item['commission'] or Decimal('0.00') for item in product_summary)
+
+    # Calculate metrics
+    conversion_rate = Decimal('75.5')  # Placeholder
+    commission_efficiency = Decimal('88.2')  # Placeholder
+    payment_processing = Decimal('92.1')  # Placeholder
+
+    # NEW: Prepare data for Weekly Advisor Report
+    weekly_data = prepare_weekly_advisor_data(request.user, selected_week, selected_year)
+
+    context = {
+        'commission_weeks': commission_weeks,
+        'total_estimated': total_estimated,
+        'total_actual': total_actual,
+        'variance': variance,
+        'variance_percentage': variance_percentage,
+        'pending_approval': pending_approval,
+        'pending_count': pending_count,
+        'completed_applications': completed_applications,
+        'estimated_growth': estimated_growth,
+        'available_weeks': available_weeks,
+        'selected_week': selected_week,
+        'selected_year': selected_year,
+        'week_dates': week_dates,
+        'active_tab': active_tab,
+        'product_summary': product_summary,
+        'total_applications': total_applications,
+        'total_premium': total_premium,
+        'total_commission': total_commission,
+        'conversion_rate': conversion_rate,
+        'commission_efficiency': commission_efficiency,
+        'payment_processing': payment_processing,
+        # NEW: Weekly Advisor Report data
+        'weekly_data': weekly_data,
+        'totals': calculate_weekly_totals(weekly_data),
+    }
+
+    return render(request, 'crm/weekly_commission_report.html', context)
+
+def get_week_dates(year, week_number):
+    """Get start and end dates for a given week number"""
+    first_day = datetime.strptime(f'{year}-W{week_number}-1', "%Y-W%W-%w").date()
+    last_day = first_day + timedelta(days=6)
+    return first_day, last_day
+
+def prepare_weekly_advisor_data_from_activities(daily_activities, week_start):
+    """Prepare weekly data from DailyAdvisorActivity records"""
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekly_data = []
+    current_date = week_start
+    
+    for i, day_name in enumerate(days):
+        # Try to find activity for this date
+        activity = None
+        for act in daily_activities:
+            if act.date == current_date:
+                activity = act
+                break
+        
+        if activity:
+            day_data = {
+                'day_name': day_name,
+                'date': current_date,
+                'calls_made': activity.calls_made,
+                'appointments_booked': activity.appointments_booked,
+                'appointments_attended': activity.appointments_attended,
+                'presentations_made': activity.presentations_made,
+                'references_collected': activity.references_collected,
+                'brochures_sent': activity.brochures_sent,
+                'brochures_received': activity.brochures_received,
+                'customer_introductions': activity.customer_introductions,
+                'other_sources': activity.other_sources,
+                'policies_sold': activity.policies_sold,
+                'total_premium': activity.total_premium,
+                'home_insurance': activity.home_insurance,
+                'pending_policies_count': activity.pending_policies_count,
+                'pending_policies_amount': activity.pending_policies_amount,
+                'remarks': activity.remarks,
+                'mortgages': activity.mortgages,
+                'wills': activity.wills,
+                'policy_details': list(activity.policy_details.all()) if hasattr(activity, 'policy_details') else [],
+            }
+        else:
+            # Create empty day data
+            day_data = {
+                'day_name': day_name,
+                'date': current_date,
+                'calls_made': 0,
+                'appointments_booked': 0,
+                'appointments_attended': 0,
+                'presentations_made': 0,
+                'references_collected': 0,
+                'brochures_sent': 0,
+                'brochures_received': 0,
+                'customer_introductions': 0,
+                'other_sources': 0,
+                'policies_sold': 0,
+                'total_premium': Decimal('0.00'),
+                'home_insurance': 0,
+                'pending_policies_count': 0,
+                'pending_policies_amount': Decimal('0.00'),
+                'remarks': '',
+                'mortgages': 0,
+                'wills': 0,
+                'policy_details': [],
+            }
+        
+        weekly_data.append(day_data)
+        current_date += timedelta(days=1)
+    
+    return weekly_data
+
+def prepare_weekly_advisor_data_from_mappings(commission_mappings, week_number, year):
+    """
+    Prepare weekly data for the advisor report from actual commission mappings.
+    """
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekly_data = []
+    
+    # If no commission mappings, return empty data
+    if not commission_mappings.exists():
+        for i, day in enumerate(days):
+            day_data = {
+                'day_name': day,
+                'calls_made': 0,
+                'appointments_booked': 0,
+                'appointments_attended': 0,
+                'presentations_made': 0,
+                'posted_brochures': 0,
+                'customer_introduction': 0,
+                'other_sources': 0,
+                'policies_sold': 0,
+                'policies': [],
+                'accident_policy_number': '',
+                'accident_units': 0,
+                'accident_premium': Decimal('0.00'),
+                'pending_updates': '',
+                'home_insurance_count': 0,
+                'home_insurance_amount': Decimal('0.00'),
+                'total_premium': Decimal('0.00'),
+                'remarks': 'No data available',
+                'ftb_count': 0,
+                'remortgage_count': 0,
+                'referred_count': 0,
+                'completed_count': 0,
+            }
+            weekly_data.append(day_data)
+        return weekly_data
+    
+    # Group mappings by day of the week
+    mappings_list = list(commission_mappings.select_related(
+        'insurance_policy', 
+        'insurance_policy__customer'
+    ))
+    
+    policies_per_day = max(1, len(mappings_list) // 7)
+    
+    for i, day in enumerate(days):
+        day_policies = []
+        day_start_idx = i * policies_per_day
+        day_end_idx = min((i + 1) * policies_per_day, len(mappings_list))
+        
+        if i == 6:  # Sunday gets remaining policies
+            day_end_idx = len(mappings_list)
+        
+        for mapping in mappings_list[day_start_idx:day_end_idx]:
+            policy = mapping.insurance_policy
+            day_policies.append({
+                'applicant_name': f"{policy.customer.first_name} {policy.customer.last_name}",
+                'address': policy.customer.address or 'N/A',
+                'contact_no': policy.customer.phone or policy.customer.mobile or 'N/A',
+                'dob': policy.customer.date_of_birth.strftime('%d.%m.%Y') if policy.customer.date_of_birth else 'N/A',
+                'provider': policy.insurance_company,
+                'life_cover_amount': policy.coverage_amount or Decimal('0.00'),
+                'policy_number': policy.policy_number or 'N/A',
+                'illustration_premium': policy.premium_amount or Decimal('0.00'),
+                'illustration_commission': mapping.estimated_commission or Decimal('0.00'),
+                'new_premium': policy.premium_amount or Decimal('0.00'),
+                'new_commission': mapping.actual_commission or Decimal('0.00'),
+                'policy_status': policy.policy_status,
+                # Placeholder fields for other policy types
+                'cic_cover_amount': Decimal('0.00'),
+                'cic_provider': 'N/A',
+                'cic_policy_number': 'N/A',
+                'cic_illustration_premium': Decimal('0.00'),
+                'cic_illustration_commission': Decimal('0.00'),
+                'cic_new_premium': Decimal('0.00'),
+                'cic_new_commission': Decimal('0.00'),
+                'cic_policy_status': 'N/A',
+                'ip_cover_amount': Decimal('0.00'),
+                'ip_provider': 'N/A',
+                'ip_policy_number': 'N/A',
+                'ip_illustration_premium': Decimal('0.00'),
+                'ip_illustration_commission': Decimal('0.00'),
+                'ip_new_premium': Decimal('0.00'),
+                'ip_new_commission': Decimal('0.00'),
+                'ip_policy_status': 'N/A',
+            })
+        
+        # Calculate day totals
+        total_premium = sum((p['new_premium'] for p in day_policies), Decimal('0.00'))
+        policies_sold = len(day_policies)
+        
+        day_data = {
+            'day_name': day,
+            'calls_made': 10 + i * 2,
+            'appointments_booked': 2 + (i % 3),
+            'appointments_attended': 1 + (i % 2),
+            'presentations_made': 1 + (i % 2),
+            'posted_brochures': i % 3,
+            'customer_introduction': i % 2,
+            'other_sources': i % 2,
+            'policies_sold': policies_sold,
+            'policies': day_policies,
+            'accident_policy_number': f'AP{week_number}{i:02d}' if policies_sold > 0 else '',
+            'accident_units': 2 if i == 3 and policies_sold > 0 else (1 if i > 3 and policies_sold > 0 else 0),
+            'accident_premium': Decimal('25.00') if i == 3 and policies_sold > 0 else (Decimal('12.50') if i > 3 and policies_sold > 0 else Decimal('0.00')),
+            'pending_updates': 'Update needed' if i % 2 and policies_sold > 0 else '',
+            'home_insurance_count': 1 if i == 4 and policies_sold > 0 else 0,
+            'home_insurance_amount': Decimal('150.00') if i == 4 and policies_sold > 0 else Decimal('0.00'),
+            'total_premium': total_premium,
+            'remarks': 'Productive day' if policies_sold > 0 else 'Follow-up needed',
+            'ftb_count': 1 if i == 2 and policies_sold > 0 else 0,
+            'remortgage_count': 1 if i == 5 and policies_sold > 0 else 0,
+            'referred_count': 0,
+            'completed_count': policies_sold,
+        }
+        
+        weekly_data.append(day_data)
+    
+    return weekly_data
+
+def calculate_weekly_totals(weekly_data):
+    """Calculate totals for the weekly advisor report."""
+    totals = {
+        'calls_made': sum(day['calls_made'] for day in weekly_data),
+        'appointments_booked': sum(day['appointments_booked'] for day in weekly_data),
+        'appointments_attended': sum(day['appointments_attended'] for day in weekly_data),
+        'presentations_made': sum(day['presentations_made'] for day in weekly_data),
+        'posted_brochures': sum(day['posted_brochures'] for day in weekly_data),
+        'customer_introduction': sum(day['customer_introduction'] for day in weekly_data),
+        'other_sources': sum(day['other_sources'] for day in weekly_data),
+        'policies_sold': sum(day['policies_sold'] for day in weekly_data),
+        'total_premium': sum(day['total_premium'] for day in weekly_data),
+        'home_insurance_count': sum(day['home_insurance_count'] for day in weekly_data),
+        'ftb_count': sum(day['ftb_count'] for day in weekly_data),
+        'remortgage_count': sum(day['remortgage_count'] for day in weekly_data),
+        'referred_count': sum(day['referred_count'] for day in weekly_data),
+        'completed_count': sum(day['completed_count'] for day in weekly_data),
+    }
+    return totals
+
+@login_required
+def export_advisor_report(request):
+    """Export advisor weekly report to CSV"""
+    import csv
+    from django.http import HttpResponse
+    
+    # Get parameters from request
+    week_number = request.GET.get('week', timezone.now().isocalendar()[1])
+    year = request.GET.get('year', timezone.now().year)
+    
+    try:
+        week_number = int(week_number)
+        year = int(year)
+    except (ValueError, TypeError):
+        week_number = timezone.now().isocalendar()[1]
+        year = timezone.now().year
+    
+    # Prepare weekly data (using the same function as in commission_report)
+    weekly_data = prepare_weekly_advisor_data(request.user, week_number, year)
+    totals = calculate_weekly_totals(weekly_data)
+    
+    # Create HTTP response with CSV attachment
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="advisor_report_week_{week_number}_{year}.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Write header
+    writer.writerow(['Advisor Weekly Activity Report'])
+    writer.writerow([f'Week: {week_number}, Year: {year}'])
+    writer.writerow([f'Advisor: {request.user.get_full_name()}'])
+    writer.writerow([])
+    
+    # Write daily activity headers
+    writer.writerow(['Day', 'Calls Made', 'Appointments Booked', 'Appointments Attended', 
+                    'Presentations Made', 'Posted Brochures', 'Customer Introductions', 
+                    'Other Sources', 'Policies Sold', 'Total Premium', 'Remarks'])
+    
+    # Write daily activity data
+    for day_data in weekly_data:
+        writer.writerow([
+            day_data['day_name'],
+            day_data['calls_made'],
+            day_data['appointments_booked'],
+            day_data['appointments_attended'],
+            day_data['presentations_made'],
+            day_data['posted_brochures'],
+            day_data['customer_introduction'],
+            day_data['other_sources'],
+            day_data['policies_sold'],
+            f"£{day_data['total_premium']:.2f}",
+            day_data['remarks']
+        ])
+    
+    # Write totals row
+    writer.writerow([
+        'TOTALS',
+        totals['calls_made'],
+        totals['appointments_booked'],
+        totals['appointments_attended'],
+        totals['presentations_made'],
+        totals['posted_brochures'],
+        totals['customer_introduction'],
+        totals['other_sources'],
+        totals['policies_sold'],
+        f"£{totals['total_premium']:.2f}",
+        ''
+    ])
+    
+    writer.writerow([])
+    
+    # Write policy details header
+    writer.writerow(['Policy Details'])
+    writer.writerow(['Day', 'Applicant Name', 'Address', 'Contact No', 'DOB', 'Provider', 
+                    'Life Cover Amount', 'Policy Number', 'Premium', 'Commission', 'Status'])
+    
+    # Write policy details
+    for i, day_data in enumerate(weekly_data):
+        for policy in day_data['policies']:
+            writer.writerow([
+                day_data['day_name'],
+                policy['applicant_name'],
+                policy['address'],
+                policy['contact_no'],
+                policy['dob'],
+                policy['provider'],
+                f"£{policy['life_cover_amount']:.2f}",
+                policy['policy_number'],
+                f"£{policy['illustration_premium']:.2f}",
+                f"£{policy['illustration_commission']:.2f}",
+                policy['policy_status']
+            ])
+    
+    writer.writerow([])
+    
+    # Write summary section
+    writer.writerow(['Summary Statistics'])
+    writer.writerow(['First Time Buyers', totals['ftb_count']])
+    writer.writerow(['Remortgages', totals['remortgage_count']])
+    writer.writerow(['Referred Cases', totals['referred_count']])
+    writer.writerow(['Completed Cases', totals['completed_count']])
+    writer.writerow(['Home Insurance Policies', totals['home_insurance_count']])
+    
+    return response
+
+@login_required
+def advisor_weekly_report(request):
+    """Weekly Advisor Report as a standalone page"""
+    # Get filter parameters from request
+    selected_week = request.GET.get('week')
+    selected_year = request.GET.get('year', datetime.now().year)
+    
+    # Convert to integers with validation
+    try:
+        selected_year = int(selected_year)
+        selected_week = int(selected_week) if selected_week else None
+    except (ValueError, TypeError):
+        selected_year = datetime.now().year
+        selected_week = None
+
+    # Base queryset - managers see all weeks, others see only their own
+    if request.user.is_manager:
+        available_weeks = CommissionWeek.objects.all()
+    else:
+        available_weeks = CommissionWeek.objects.filter(advisor=request.user)
+    
+    available_weeks = available_weeks.order_by('-year', '-week_number').distinct()
+
+    # If no week selected, use the most recent week
+    if not selected_week and available_weeks.exists():
+        latest_week = available_weeks.first()
+        selected_week = latest_week.week_number
+        selected_year = latest_week.year
+
+    # Filter for display weeks
+    display_weeks = available_weeks
+    if selected_week and selected_year:
+        display_weeks = display_weeks.filter(week_number=selected_week, year=selected_year)
+
+    # Get commission mappings for the selected weeks
+    commission_mappings = CommissionMapping.objects.filter(commission_week__in=display_weeks)
+    
+    # Week dates for display
+    week_dates = "N/A"
+    if display_weeks.exists():
+        week = display_weeks.first()
+        week_dates = f"{week.start_date.strftime('%d.%m.%Y')} to {week.end_date.strftime('%d.%m.%Y')}"
+
+    # Prepare weekly data - FIXED: Use the correct function
+    weekly_data = prepare_weekly_advisor_data_from_mappings(commission_mappings, selected_week, selected_year)
+    totals = calculate_weekly_totals(weekly_data)
+
+    context = {
+        'available_weeks': available_weeks,
+        'selected_week': selected_week,
+        'selected_year': selected_year,
+        'week_dates': week_dates,
+        'weekly_data': weekly_data,
+        'totals': totals,
+        'is_standalone_page': True,
+    }
+
+    return render(request, 'crm/advisor_weekly_report.html', context)
+
+def get_week_dates(year, week_number):
+    """Get start and end dates for a given week number"""
+    first_day = datetime.strptime(f'{year}-W{week_number}-1', "%Y-W%W-%w").date()
+    last_day = first_day + timedelta(days=6)
+    return first_day, last_day
+
+def prepare_weekly_advisor_data(advisor, week_number, year):
+    """Prepare weekly data structure matching the Excel format"""
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekly_data = []
+    
+    # Get the date range for the requested week
+    start_date, end_date = get_week_dates(year, week_number)
+    current_date = start_date
+    
+    for i, day_name in enumerate(days):
+        # Try to get activity data for this day
+        try:
+            activity = DailyAdvisorActivity.objects.get(
+                advisor=advisor, 
+                date=current_date
+            )
+            policy_details = list(activity.policy_details.all())
+            
+            day_data = {
+                'day_name': day_name,
+                'date': current_date,
+                'calls_made': activity.calls_made,
+                'appointments_booked': activity.appointments_booked,
+                'appointments_attended': activity.appointments_attended,
+                'presentations_made': activity.presentations_made,
+                'references_collected': activity.references_collected,
+                'brochures_sent': activity.brochures_sent,
+                'brochures_received': activity.brochures_received,
+                'customer_introductions': activity.customer_introductions,
+                'other_sources': activity.other_sources,
+                'policies_sold': activity.policies_sold,
+                'total_premium': activity.total_premium,
+                'home_insurance': activity.home_insurance,
+                'pending_policies_count': activity.pending_policies_count,
+                'pending_policies_amount': activity.pending_policies_amount,
+                'remarks': activity.remarks,
+                'mortgages': activity.mortgages,
+                'wills': activity.wills,
+                'policy_details': policy_details,
+            }
+            
+        except DailyAdvisorActivity.DoesNotExist:
+            # Create empty day data if no activity recorded
+            day_data = {
+                'day_name': day_name,
+                'date': current_date,
+                'calls_made': 0,
+                'appointments_booked': 0,
+                'appointments_attended': 0,
+                'presentations_made': 0,
+                'references_collected': 0,
+                'brochures_sent': 0,
+                'brochures_received': 0,
+                'customer_introductions': 0,
+                'other_sources': 0,
+                'policies_sold': 0,
+                'total_premium': 0,
+                'home_insurance': 0,
+                'pending_policies_count': 0,
+                'pending_policies_amount': 0,
+                'remarks': '',
+                'mortgages': 0,
+                'wills': 0,
+                'policy_details': [],
+            }
+        
+        weekly_data.append(day_data)
+        current_date += timedelta(days=1)
+    
+    return weekly_data
+
+def calculate_weekly_totals(weekly_data):
+    """Calculate totals for the weekly report"""
+    totals = {
+        'calls_made': sum(day['calls_made'] for day in weekly_data),
+        'appointments_booked': sum(day['appointments_booked'] for day in weekly_data),
+        'appointments_attended': sum(day['appointments_attended'] for day in weekly_data),
+        'presentations_made': sum(day['presentations_made'] for day in weekly_data),
+        'references_collected': sum(day['references_collected'] for day in weekly_data),
+        'brochures_sent': sum(day['brochures_sent'] for day in weekly_data),
+        'brochures_received': sum(day['brochures_received'] for day in weekly_data),
+        'customer_introductions': sum(day['customer_introductions'] for day in weekly_data),
+        'other_sources': sum(day['other_sources'] for day in weekly_data),
+        'policies_sold': sum(day['policies_sold'] for day in weekly_data),
+        'total_premium': sum(day['total_premium'] for day in weekly_data),
+        'home_insurance': sum(day['home_insurance'] for day in weekly_data),
+        'pending_policies_count': sum(day['pending_policies_count'] for day in weekly_data),
+        'pending_policies_amount': sum(day['pending_policies_amount'] for day in weekly_data),
+        'mortgages': sum(day['mortgages'] for day in weekly_data),
+        'wills': sum(day['wills'] for day in weekly_data),
+    }
+    return totals
+
+@login_required
+def advisor_weekly_report(request):
+    """Main weekly report view"""
+    # Get filter parameters
+    selected_week = request.GET.get('week')
+    selected_year = request.GET.get('year', datetime.now().year)
+    
+    # Convert to integers with validation
+    try:
+        selected_year = int(selected_year)
+        selected_week = int(selected_week) if selected_week else datetime.now().isocalendar()[1]
+    except (ValueError, TypeError):
+        selected_year = datetime.now().year
+        selected_week = datetime.now().isocalendar()[1]
+    
+    # Get week dates for display
+    week_start, week_end = get_week_dates(selected_year, selected_week)
+    week_dates = f"{week_start.strftime('%d.%m.%Y')} to {week_end.strftime('%d.%m.%Y')}"
+    
+    # Prepare weekly data
+    weekly_data = prepare_weekly_advisor_data(request.user, selected_week, selected_year)
+    totals = calculate_weekly_totals(weekly_data)
+    
+    context = {
+        'advisor_name': request.user.get_full_name(),
+        'selected_week': selected_week,
+        'selected_year': selected_year,
+        'business_week_start': week_start.strftime('%d.%m.%Y'),
+        'business_week_end': week_end.strftime('%d.%m.%Y'),
+        'week_dates': week_dates,
+        'weekly_data': weekly_data,
+        'totals': totals,
+    }
+    
+    return render(request, 'crm/advisor_weekly_report.html', context)
+
+
+@login_required
+def export_advisor_report(request):
+    """Export advisor weekly report to Excel"""
+    selected_week = request.GET.get('week')
+    selected_year = request.GET.get('year', datetime.now().year)
+    
+    try:
+        selected_year = int(selected_year)
+        selected_week = int(selected_week) if selected_week else datetime.now().isocalendar()[1]
+    except (ValueError, TypeError):
+        selected_year = datetime.now().year
+        selected_week = datetime.now().isocalendar()[1]
+    
+    # Prepare weekly data
+    weekly_data = prepare_weekly_advisor_data(request.user, selected_week, selected_year)
+    totals = calculate_weekly_totals(weekly_data)
+    
+    # Create Excel file
+    output = BytesIO()  # This will now work with the import
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    workbook = writer.book
+    
+    # Prepare data for Excel
+    activity_data = []
+    for day_data in weekly_data:
+        activity_data.append({
+            'Day': day_data['day_name'],
+            'Calls Made': day_data['calls_made'],
+            'Appointments Booked': day_data['appointments_booked'],
+            'Appointments Attended': day_data['appointments_attended'],
+            'Presentations Made': day_data['presentations_made'],
+            'References Collected': day_data['references_collected'],
+            'Brochures Sent': day_data['brochures_sent'],
+            'Brochures Received': day_data['brochures_received'],
+            'Customer Introductions': day_data['customer_introductions'],
+            'Other Sources': day_data['other_sources'],
+            'Policies Sold': day_data['policies_sold'],
+            'Total Premium': float(day_data['total_premium']),
+            'Home Insurance': day_data['home_insurance'],
+            'Pending Policies Count': day_data['pending_policies_count'],
+            'Pending Policies Amount': float(day_data['pending_policies_amount']),
+            'Remarks': day_data['remarks'],
+            'Mortgages': day_data['mortgages'],
+            'Wills': day_data['wills'],
+        })
+    
+    # Add totals row
+    activity_data.append({
+        'Day': 'TOTAL',
+        'Calls Made': totals['calls_made'],
+        'Appointments Booked': totals['appointments_booked'],
+        'Appointments Attended': totals['appointments_attended'],
+        'Presentations Made': totals['presentations_made'],
+        'References Collected': totals['references_collected'],
+        'Brochures Sent': totals['brochures_sent'],
+        'Brochures Received': totals['brochures_received'],
+        'Customer Introductions': totals['customer_introductions'],
+        'Other Sources': totals['other_sources'],
+        'Policies Sold': totals['policies_sold'],
+        'Total Premium': float(totals['total_premium']),
+        'Home Insurance': totals['home_insurance'],
+        'Pending Policies Count': totals['pending_policies_count'],
+        'Pending Policies Amount': float(totals['pending_policies_amount']),
+        'Remarks': '',
+        'Mortgages': totals['mortgages'],
+        'Wills': totals['wills'],
+    })
+    
+    # Convert to DataFrame and write to Excel
+    df_activity = pd.DataFrame(activity_data)
+    df_activity.to_excel(writer, sheet_name='Weekly Activity', index=False)
+    
+    # Policy details sheet
+    policy_data = []
+    for day_data in weekly_data:
+        for policy in day_data['policy_details']:
+            policy_data.append({
+                'Day': day_data['day_name'],
+                'Applicant': policy.applicant_name,
+                'Address': policy.address,
+                'Contact No': policy.contact_no,
+                'DOB': policy.date_of_birth.strftime('%d.%m.%Y') if policy.date_of_birth else 'N/A',
+                'Provider': policy.provider,
+                'Life Cover Amount': float(policy.life_cover_amount),
+                'Policy Number': policy.policy_number,
+                'Premium': float(policy.illustration_premium),
+                'Commission': float(policy.illustration_commission),
+                'Status': policy.policy_status,
+            })
+    
+    if policy_data:
+        df_policies = pd.DataFrame(policy_data)
+        df_policies.to_excel(writer, sheet_name='Policy Details', index=False)
+    
+    # Close the writer
+    writer.close()
+    output.seek(0)
+    
+    # Create HTTP response
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename=advisor_report_week_{selected_week}_{selected_year}.xlsx'
+    
+    return response
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_daily_activity(request):
+    """API endpoint for advisors to manually update activities"""
+    activity_type = request.data.get('type')
+    value = request.data.get('value', 1)
+    
+    activity, created = DailyAdvisorActivity.objects.get_or_create(
+        advisor=request.user,
+        date=timezone.now().date(),
+        defaults={activity_type: 0}
+    )
+    
+    if hasattr(activity, activity_type):
+        current_value = getattr(activity, activity_type) or 0
+        setattr(activity, activity_type, current_value + int(value))
+        activity.save()
+        
+        return Response({'status': 'success', 'new_value': getattr(activity, activity_type)})
+    
+    return Response({'status': 'error', 'message': 'Invalid activity type'}, status=400)

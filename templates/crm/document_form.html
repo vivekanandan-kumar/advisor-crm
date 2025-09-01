@@ -1,0 +1,258 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Document - Advisor CRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-upload me-2"></i>
+                    {% if object %}Edit{% else %}Add{% endif %} Document
+                    {% if insurance %}for Insurance Policy {{ insurance.policy_number }}{% endif %}
+                    {% if application %}for Application {{ application.application_number }}{% endif %}
+                    {% if mortgage %}for Mortgage {{ mortgage.mortgage_id }}{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Hidden fields for application, insurance, and mortgage if they're provided -->
+                    {% if application %}
+                        <input type="hidden" name="application" value="{{ form.application.value }}">
+                    {% endif %}
+                    
+                    {% if insurance %}
+                        <input type="hidden" name="insurance" value="{{ insurance.pk }}">
+                    {% endif %}
+                    
+                    {% if mortgage %}
+                        <input type="hidden" name="mortgage" value="{{ mortgage.pk }}">
+                    {% endif %}
+                    
+                    <div class="row">
+                        <!-- Left Column - Document Details -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_document_type" class="form-label fw-bold">Document Type</label>
+                                {{ form.document_type }}
+                                {% if form.document_type.errors %}
+                                    <div class="text-danger small">{{ form.document_type.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_document_name" class="form-label fw-bold">Document Name</label>
+                                {{ form.document_name }}
+                                {% if form.document_name.errors %}
+                                    <div class="text-danger small">{{ form.document_name.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Enter a descriptive name for this document</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_document_file" class="form-label fw-bold">File Path/URL</label>
+                                {{ form.document_file }}
+                                {% if form.document_file.errors %}
+                                    <div class="text-danger small">{{ form.document_file.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Enter the full path or URL to the document</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_document_status" class="form-label fw-bold">Status</label>
+                                {{ form.document_status }}
+                                {% if form.document_status.errors %}
+                                    <div class="text-danger small">{{ form.document_status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column - Dates and Notes -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_requested_date" class="form-label fw-bold">Requested Date</label>
+                                {{ form.requested_date }}
+                                {% if form.requested_date.errors %}
+                                    <div class="text-danger small">{{ form.requested_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_received_date" class="form-label fw-bold">Received Date</label>
+                                {{ form.received_date }}
+                                {% if form.received_date.errors %}
+                                    <div class="text-danger small">{{ form.received_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_expiry_date" class="form-label fw-bold">Expiry Date</label>
+                                {{ form.expiry_date }}
+                                {% if form.expiry_date.errors %}
+                                    <div class="text-danger small">{{ form.expiry_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_notes" class="form-label fw-bold">Notes</label>
+                                {{ form.notes }}
+                                {% if form.notes.errors %}
+                                    <div class="text-danger small">{{ form.notes.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Customer field (if not linked to application/insurance/mortgage) -->
+                    {% if not application and not insurance and not mortgage %}
+                        <div class="mb-3 border-top pt-3">
+                            <label for="id_customer" class="form-label fw-bold">Customer</label>
+                            {{ form.customer }}
+                            {% if form.customer.errors %}
+                                <div class="text-danger small">{{ form.customer.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <input type="hidden" name="customer" value="
+                            {% if application %}{{ application.customer.pk }}
+                            {% elif insurance %}{{ insurance.customer.pk }}
+                            {% elif mortgage %}{{ mortgage.customer.pk }}
+                            {% endif %}">
+                    {% endif %}
+                    
+                    <!-- Display linked entity info if provided -->
+                    {% if application %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-link me-2"></i>
+                            <strong>Linked to Application:</strong> {{ application.application_number }} - {{ application.customer.first_name }} {{ application.customer.last_name }}
+                        </div>
+                    {% endif %}
+                    
+                    {% if insurance %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-link me-2"></i>
+                            <strong>Linked to Insurance Policy:</strong> {{ insurance.policy_number }} - {{ insurance.customer.first_name }} {{ insurance.customer.last_name }}
+                        </div>
+                    {% endif %}
+                    
+                    {% if mortgage %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-link me-2"></i>
+                            <strong>Linked to Mortgage:</strong> {{ mortgage.mortgage_id }} - {{ mortgage.customer.first_name }} {{ mortgage.customer.last_name }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                        {% if insurance %}
+                            <a href="{% url 'insurance_detail' insurance.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Policy
+                            </a>
+                        {% elif application %}
+                            <a href="{% url 'application_detail' application.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Application
+                            </a>
+                        {% elif mortgage %}
+                            <a href="{% url 'mortgage_detail' mortgage.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Mortgage
+                            </a>
+                        {% elif object and object.application %}
+                            <a href="{% url 'application_detail' object.application.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Application
+                            </a>
+                        {% elif object and object.insurance %}
+                            <a href="{% url 'insurance_detail' object.insurance.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Policy
+                            </a>
+                        {% elif object and object.mortgage %}
+                            <a href="{% url 'mortgage_detail' object.mortgage.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Mortgage
+                            </a>
+                        {% elif form.instance and form.instance.application %}
+                            <a href="{% url 'application_detail' form.instance.application.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Application
+                            </a>
+                        {% elif form.instance and form.instance.insurance %}
+                            <a href="{% url 'insurance_detail' form.instance.insurance.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Policy
+                            </a>
+                        {% elif form.instance and form.instance.mortgage %}
+                            <a href="{% url 'mortgage_detail' form.instance.mortgage.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Mortgage
+                            </a>
+                        {% else %}
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Document
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add form-control class to all form fields for consistent styling
+        const formFields = document.querySelectorAll('select, input, textarea');
+        formFields.forEach(field => {
+            field.classList.add('form-control');
+        });
+        
+        // Add specific styling to the notes textarea
+        const notesField = document.getElementById('id_notes');
+        if (notesField) {
+            notesField.style.minHeight = '100px';
+        }
+        
+        // Disable application, insurance, mortgage, and customer fields if they exist and should be hidden
+        const applicationField = document.getElementById('id_application');
+        const insuranceField = document.getElementById('id_insurance');
+        const mortgageField = document.getElementById('id_mortgage');
+        const customerField = document.getElementById('id_customer');
+        
+        // Hide linked entity fields if they're provided via context
+        {% if application or insurance or mortgage %}
+            if (customerField) {
+                customerField.disabled = true;
+                customerField.style.display = 'none';
+                if (customerField.previousElementSibling && customerField.previousElementSibling.tagName === 'LABEL') {
+                    customerField.previousElementSibling.style.display = 'none'; // Hide label
+                }
+            }
+        {% endif %}
+        
+        if (applicationField) {
+            applicationField.disabled = true;
+            applicationField.style.display = 'none';
+            if (applicationField.previousElementSibling && applicationField.previousElementSibling.tagName === 'LABEL') {
+                applicationField.previousElementSibling.style.display = 'none'; // Hide label
+            }
+        }
+        
+        if (insuranceField) {
+            insuranceField.disabled = true;
+            insuranceField.style.display = 'none';
+            if (insuranceField.previousElementSibling && insuranceField.previousElementSibling.tagName === 'LABEL') {
+                insuranceField.previousElementSibling.style.display = 'none'; // Hide label
+            }
+        }
+        
+        if (mortgageField) {
+            mortgageField.disabled = true;
+            mortgageField.style.display = 'none';
+            if (mortgageField.previousElementSibling && mortgageField.previousElementSibling.tagName === 'LABEL') {
+                mortgageField.previousElementSibling.style.display = 'none'; // Hide label
+            }
+        }
+    });
+</script>
+{% endblock %}
