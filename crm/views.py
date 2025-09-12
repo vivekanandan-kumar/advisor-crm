@@ -935,6 +935,7 @@ def insurance_communication_create(request, insurance_id):
         'application': application
     })
 
+
 @login_required
 def application_communication_create(request, pk):
     """Create communication for any application"""
@@ -966,6 +967,29 @@ def application_communication_create(request, pk):
         'form': form,
         'application': application,
         'customer': application.customer
+    })
+
+@login_required
+def insurance_communication_edit(request, insurance_id, pk):
+    """Edit a communication for an insurance policy"""
+    insurance = get_object_or_404(InsurancePolicy, insurance_id=insurance_id)
+    communication = get_object_or_404(Communication, pk=pk, insurance=insurance)
+    
+    if request.method == 'POST':
+        form = CommunicationForm(request.POST, instance=communication)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Communication updated successfully!')
+            return redirect('insurance_detail', pk=insurance.insurance_id)
+    else:
+        form = CommunicationForm(instance=communication)
+    
+    return render(request, 'crm/communication_form.html', {
+        'form': form,
+        'insurance': insurance,
+        'customer': insurance.customer,
+        'communication': communication,
+        'title': 'Edit Communication'
     })
 
 @login_required

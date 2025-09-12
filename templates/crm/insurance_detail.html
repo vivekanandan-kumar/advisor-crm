@@ -311,7 +311,7 @@
                                 <td>{{ communication.communication_date|date:"M d, Y H:i" }}</td>
                                 <td>{{ communication.communication_type }}</td>
                                 <td>{{ communication.summary|truncatewords:10 }}</td>
-                                <td>{{ communication.user.get_full_name|default:communication.user.username }}</td>
+                                <td>{{ communication.advisor.get_full_name|default:communication.advisor.username }}</td>
                                 <td>
                                     {% if communication.follow_up_date %}
                                     {{ communication.follow_up_date|date:"M d, Y" }}

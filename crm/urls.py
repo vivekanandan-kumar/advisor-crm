@@ -45,6 +45,7 @@ urlpatterns = [
     path('insurance/<str:pk>/delete/', views.InsuranceDeleteView.as_view(), name='insurance_delete'),
     path('insurance/<str:insurance_id>/communication/add/', views.insurance_communication_create, name='insurance_communication_create'),
     path('insurance/<str:pk>/document/add/', views.add_document, name='add_document'),
+    path('insurance/<str:insurance_id>/communications/<int:pk>/edit/', views.insurance_communication_edit, name='insurance_communication_edit'),
 
     # Applications
     path('applications/', views.ApplicationListView.as_view(), name='application_list'),
