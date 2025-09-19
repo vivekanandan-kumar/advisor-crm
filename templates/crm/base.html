@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -51,7 +52,7 @@
             overflow-x: hidden;
         }
 
-        /* Sidebar Styles */
+        /* Sidebar Styles*/
         .sidebar {
             min-height: 100vh;
             background: var(--gradient-primary);
@@ -63,7 +64,10 @@
             z-index: 1000;
             transition: transform var(--transition-speed) ease;
             padding: 1.5rem 1rem;
+            overflow-y: auto; /* Enables vertical scrolling when content overflows */
+            padding-top: 0.5rem;
         }
+
 
         .sidebar .nav-link {
             color: rgba(255, 255, 255, .9);
@@ -741,6 +745,228 @@
             color: var(--on-surface);
             margin-top: 0.5rem;
         }
+
+        /* Circular image styling */
+        .rounded-circle {
+            border-radius: 50% !important;
+        }
+
+        /* Profile image placeholder styling */
+        .profile-image-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #6c757d;
+            color: white;
+        }
+
+        /* Ensure images maintain aspect ratio */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Table image sizing */
+        .table img.rounded-circle {
+            object-fit: cover;
+            border: 2px solid #dee2e6;
+        }
+
+        /* Improved logo responsiveness */
+        .main-content-logo {
+            width: 160px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            overflow: hidden;
+            background: white;
+            padding: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            margin: 0 auto 1.5rem;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .main-content-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* Responsive adjustments for logo */
+        @media (max-width: 768px) {
+            .main-content-logo {
+                width: 140px;
+                height: 140px;
+                padding: 10px;
+            }
+
+            .main-content-brand-name {
+                font-size: 1.75rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-content-logo {
+                width: 120px;
+                height: 120px;
+                padding: 8px;
+            }
+
+            .main-content-brand-name {
+                font-size: 1.5rem;
+            }
+
+            .main-content-brand-tagline {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Horizontal Branding Styles */
+        .company-branding-horizontal {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(30, 64, 175, 0.1);
+            padding: 1.5rem;
+        }
+
+        .branding-container {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo-side {
+            flex-shrink: 0;
+        }
+
+        .text-side {
+            flex-grow: 1;
+        }
+
+        .logo-container-horizontal {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            transition: all var(--transition-speed) ease;
+        }
+
+        .logo-container-horizontal:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(30, 64, 175, 0.15);
+        }
+
+        .horizontal-logo {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        .logo-badge-horizontal {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(30, 64, 175, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .company-name-horizontal {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem 0;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+            text-align: left;
+        }
+
+        .company-tagline-horizontal {
+            font-size: 1.1rem;
+            color: var(--on-surface);
+            margin: 0 0 1rem 0;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .trust-markers-horizontal {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive adjustments for horizontal layout */
+        @media (max-width: 768px) {
+            .branding-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 1.5rem;
+            }
+
+            .company-name-horizontal,
+            .company-tagline-horizontal {
+                text-align: center;
+            }
+
+            .trust-markers-horizontal {
+                justify-content: center;
+            }
+
+            .logo-container-horizontal {
+                width: 100px;
+                height: 100px;
+            }
+
+            .company-name-horizontal {
+                font-size: 1.75rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .company-branding-horizontal {
+                padding: 1.25rem;
+            }
+
+            .logo-container-horizontal {
+                width: 90px;
+                height: 90px;
+            }
+
+            .company-name-horizontal {
+                font-size: 1.5rem;
+            }
+
+            .company-tagline-horizontal {
+                font-size: 1rem;
+            }
+
+            .trust-markers-horizontal {
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+            }
+        }
     </style>
 </head>
 
@@ -755,15 +981,22 @@
             <!-- Sidebar (only show when logged in) -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar">
                 <div class="position-sticky pt-3">
-
-
                     <div class="text-center mb-4">
-                        <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                            style="width: 50px; height: 50px;">
-                            <i class="bi bi-person-fill text-primary fs-4"></i>
-                        </div>
-                        <p class="text-white mt-2 mb-0">{{ user.get_full_name|default:user.username }}</p>
-                        <small class="text-light">{{ user.profile.title|default:"Financial Advisor" }}</small>
+                        {% if user.profile_image %}
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center overflow-hidden"
+                                 style="width: 100px; height: 100px; border: 3px solid rgba(255,255,255,0.2);">
+                                <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}"
+                                     style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                        {% else %}
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center overflow-hidden bg-light"
+                                 style="width: 100px; height: 100px; border: 3px solid rgba(255,255,255,0.2);">
+                                <i class="bi bi-person-fill text-secondary" style="font-size: 3rem;"></i>
+                            </div>
+                        {% endif %}
+                        <p class="text-white mt-3 mb-0"
+                           style="font-size: 1.1rem;">{{ user.get_full_name|default:user.username }}</p>
+                        <small class="text-light">{{ user.specialization|default:"Financial Advisor" }}</small>
                     </div>
 
                     <ul class="nav flex-column">
@@ -879,17 +1112,58 @@
             <!-- Main content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
                 <div class="main-content-container">
-                    <!-- Main Content Header with Company Branding -->
-                    <div class="main-content-header fade-in">
-                        <div class="main-content-logo">
-                            <img src="https://pinnaclefinancials.co.uk/images/logo/inner-page-logo.png" alt="Pinnacle Financial Solutions Logo" />
+                    <!-- Main Content Header with Company Branding - Updated Layout -->
+                    <div class="company-branding-horizontal fade-in">
+                        <div class="branding-container">
+                            <div class="logo-side">
+                                <div class="logo-container-horizontal">
+                                    <img src="{% static 'inner-page-logo.jpeg' %}"
+                                         alt="Pinnacle Financial Solutions Logo"
+                                         class="horizontal-logo"/>
+                                    <div class="logo-badge-horizontal">
+                                        <i class="bi bi-award-fill"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-side">
+                                <h1 class="company-name-horizontal">Pinnacle Financial Solutions Ltd</h1>
+                                <p class="company-tagline-horizontal">Expert Financial Advisory Services</p>
+                            </div>
+
+                            <!-- User info and logout -->
+
+                            <div class="user-welcome d-none d-md-flex">
+                                {% if user.profile_image %}
+                                    <div class="user-avatar-small overflow-hidden"
+                                         style="width: 36px; height: 36px;">
+                                        <img src="{{ user.profile_image.url }}"
+                                             alt="{{ user.get_full_name }}"
+                                             style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
+                                {% else %}
+                                    <div class="user-avatar-small">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <div class="small text-muted">Welcome,</div>
+                                    <div class="fw-medium">{{ user.get_full_name|default:user.username }}</div>
+                                </div>
+                            </div>
+
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm btn-action">
+                                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                                </button>
+                            </form>
                         </div>
-                        <h3 class="main-content-brand-name">Pinnacle Financial Solutions LTD</h3>
-                        <p class="main-content-brand-tagline">Advisor Portal - Professional Financial Services</p>
+                    </div>
                     </div>
 
                     <!-- Enhanced Page Header Section -->
-                    <div class="page-header-section fade-in">
+
+                <div class="page-header-section fade-in">
                         <!-- Breadcrumb -->
                         <div class="breadcrumb-section">
                             <nav aria-label="breadcrumb">
@@ -899,6 +1173,7 @@
                                 </ol>
                             </nav>
                         </div>
+
 
                         <!-- Page Header Content -->
                         <div class="page-header-content">
@@ -911,30 +1186,10 @@
                                         {% block page_specific_actions %}{% endblock %}
                                         {% block page_actions %}{% endblock %}
                                     </div>
-
-                                    <!-- User info and logout -->
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="user-welcome d-none d-md-flex">
-                                            <div class="user-avatar-small">
-                                                <i class="bi bi-person-fill"></i>
-                                            </div>
-                                            <div>
-                                                <div class="small text-muted">Welcome,</div>
-                                                <div class="fw-medium">{{ user.get_full_name|default:user.username }}</div>
-                                            </div>
-                                        </div>
-
-                                        <form method="post" action="{% url 'logout' %}" class="d-inline">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-outline-danger btn-sm btn-action">
-                                                <i class="bi bi-box-arrow-right me-1"></i>Logout
-                                            </button>
-                                        </form>
-                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                </div>
 
                     <!-- Messages - Fixed syntax error -->
                     {% if messages %}
@@ -983,38 +1238,36 @@
             if (navToggleBtn && sidebar) {
                 navToggleBtn.addEventListener('click', function() {
                     sidebar.classList.toggle('mobile-open');
+                    this.classList.toggle('active');
                 });
             }
 
-            // Close mobile menu when clicking outside
-            document.addEventListener('click', function(event) {
-                if (sidebar && sidebar.classList.contains('mobile-open') &&
-                    !sidebar.contains(event.target) &&
-                    event.target !== navToggleBtn &&
-                    !navToggleBtn.contains(event.target)) {
-                    sidebar.classList.remove('mobile-open');
-                }
-            });
-
-            // Prevent dropdown from closing when clicking inside
-            document.querySelectorAll('.nav-dropdown-menu').forEach(menu => {
-                menu.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-            });
-        });
-
-        // Auto-dismiss alerts after 5 seconds
-        setTimeout(function() {
+            // Auto-close alerts after 5 seconds
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
             });
-        }, 5000);
+
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Initialize popovers
+            const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+        });
     </script>
 
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+        <!-- Additional JavaScript will be added by child templates -->
+    {% endblock %}
 </body>
 
 </html>

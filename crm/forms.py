@@ -19,69 +19,101 @@ class AdvisorCreationForm(UserCreationForm):
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'date_of_birth', 
                  'phone', 'license_number', 'specialization', 'hire_date', 'active',
-                 'is_manager', 'notes')
-        
+                 'is_manager', 'notes','profile_image')
+
+
 class AdvisorForm(forms.ModelForm):
-    # User model fields
-    first_name = forms.CharField(
-        max_length=150, 
-        required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
-    )
-    last_name = forms.CharField(
-        max_length=150, 
-        required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
-    )
-    email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(attrs={'class': 'form-control'})
-    )
     username = forms.CharField(
-        max_length=150, 
+        max_length=150,
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'
     )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control'}), 
-        required=False
+        widget=forms.PasswordInput,
+        required=False,
+        help_text='Leave blank if not changing password.'
     )
-    
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput,
+        required=False,
+        help_text='Enter the same password as above, for verification.'
+    )
+    initial = forms.CharField(
+        max_length=2,
+        required=False,
+        help_text='2-character unique initial. If blank, will be generated from name.'
+    )
+
     class Meta:
-        model = User  # This should be your Advisor model (which is the User)
-        fields = ['username', 'email', 'first_name', 'last_name', 'license_number', 
-                 'specialization', 'phone', 'hire_date', 'active', 'date_of_birth',
-                 'is_manager', 'notes']
-        widgets = {
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'license_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'specialization': forms.TextInput(attrs={'class': 'form-control'}),
-            'hire_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'date_of_birth': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'is_manager': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'notes': forms.Textarea(attrs={'rows': 3}),
-        }
-    
+        model = Advisor
+        fields = [
+            'username', 'first_name', 'last_name', 'email', 'initial',
+            'phone', 'license_number', 'specialization', 'date_of_birth',
+            'hire_date', 'active', 'is_manager', 'profile_image', 'notes'
+        ]
+
     def __init__(self, *args, **kwargs):
+        # Remove the request parameter handling since it's not used
         super().__init__(*args, **kwargs)
-        # Remove the user field access since Advisor IS the user
+
         if self.instance and self.instance.pk:
-            # Make username read-only when editing
-            self.fields['username'].widget.attrs['readonly'] = True
-    
+            # For existing advisors, make username read-only
+            self.fields['username'].disabled = True
+            self.fields['password'].required = False
+            self.fields['confirm_password'].required = False
+        else:
+            # For new advisors, make password fields required
+            self.fields['password'].required = True
+            self.fields['confirm_password'].required = True
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username:
+            # Check if username is unique (excluding current instance)
+            queryset = Advisor.objects.filter(username=username)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                raise forms.ValidationError('A user with that username already exists.')
+        return username
+
+    def clean_initial(self):
+        initial = self.cleaned_data.get('initial')
+        if initial:
+            # Ensure initial is exactly 2 characters
+            if len(initial) != 2:
+                raise forms.ValidationError('Initial must be exactly 2 characters.')
+
+            # Check if initial is unique (excluding current instance)
+            queryset = Advisor.objects.filter(initial=initial.upper())
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                raise forms.ValidationError('This initial is already in use. Please choose a different one.')
+
+            return initial.upper()
+        return initial
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+
+        if password and confirm_password and password != confirm_password:
+            self.add_error('confirm_password', 'Passwords do not match.')
+
+        return cleaned_data
+
     def save(self, commit=True):
-        # Get the instance (which is the Advisor/User)
         advisor = super().save(commit=False)
-        
-        # Handle password if provided
+
+        # Set password if provided
         password = self.cleaned_data.get('password')
         if password:
             advisor.set_password(password)
-        
+
         if commit:
             advisor.save()
-        
         return advisor
 
 class CustomerForm(forms.ModelForm):

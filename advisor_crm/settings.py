@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import pymysql
+import os
 pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -98,8 +99,8 @@ DATABASES = {
         'NAME': 'advisor_db',
         'USER': 'p_root',
         'PASSWORD': 'password',
-        'HOST': 'localhost', # in fedora
-        #'HOST': '192.168.1.13', #mac os
+        #'HOST': 'localhost', # in fedora
+        'HOST': '192.168.1.13', #mac os
         'PORT': '3306',
         'ATOMIC_REQUESTS': True,
         'OPTIONS': {
@@ -158,7 +159,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

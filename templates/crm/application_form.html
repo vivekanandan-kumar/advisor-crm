@@ -623,5 +623,34 @@
             console.log('Insurance field value:', selectedInsuranceTypes.value);
         };
     });
+
+    // Prevent duplicate insurance type selection
+    document.addEventListener('DOMContentLoaded', function () {
+        const insuranceSelect = document.getElementById('id_selected_insurance_types');
+        const selectedTypes = new Set();
+
+        if (insuranceSelect) {
+            insuranceSelect.addEventListener('change', function () {
+                const options = Array.from(this.selectedOptions);
+                options.forEach(option => {
+                    if (selectedTypes.has(option.value)) {
+                        option.selected = false;
+                        alert('This insurance type is already selected.');
+                    } else {
+                        selectedTypes.add(option.value);
+                    }
+                });
+            });
+        }
+    });
+//disable the form's submit button after the first click, providing a better user experience and reducing the chance of accidental double-submissions.
+        document.getElementById('applicationForm').addEventListener('submit', function () {
+        // Disable the submit button on form submission to prevent double-clicks
+        const submitButton = this.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+        }
+    });
 </script>
 {% endblock %}

@@ -10,8 +10,6 @@ import uuid
 from datetime import datetime
 
 def generate_mortgage_id():
-    # This function creates a unique, human-readable ID
-    # Adjust the format 'INS_{...}' to match your requirements
     now = datetime.now()
     timestamp = now.strftime('%Y%m%d%H%M%S')
     # Use a part of a UUID for extra uniqueness
@@ -19,22 +17,56 @@ def generate_mortgage_id():
     return f"MRT_{timestamp}_{unique_part}"
 
 def generate_insurance_id():
-    # This function creates a unique, human-readable ID
-    # Adjust the format 'INS_{...}' to match your requirements
-
     now = datetime.now()
     timestamp = now.strftime('%Y%m%d%H%M%S')
     # Use a part of a UUID for extra uniqueness
     unique_part = str(uuid.uuid4())[:6]
     return f"INS_{timestamp}_{unique_part}"
 
+# Add a new function for application number generation using initial
+def generate_application_number(advisor, application_type, insurance_type=None):
+    """Generate application number using advisor initial with sequential counter"""
+    timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+
+    # Create insurance type abbreviation mapping
+    insurance_abbreviations = {
+        'Life Insurance': 'LIFE',
+        'Critical Illness': 'CI',
+        'Income Protection': 'IP',
+        'Buildings Insurance': 'BLDG',
+        'Contents Insurance': 'CNT',
+        'Motor Insurance': 'MOTOR',
+        'Travel Insurance': 'TRVL',
+        'Mortgage': 'MORT',
+        'Both': 'COMB'
+    }
+
+    # Determine the base pattern based on application type
+    if application_type == 'Insurance' and insurance_type:
+        prefix = insurance_abbreviations.get(insurance_type, 'INS')
+        base_pattern = f"APP_INS_{prefix}_{advisor.initial}_{timestamp}"
+    elif application_type == 'Mortgage':
+        base_pattern = f"APP_MORT_{advisor.initial}_{timestamp}"
+    elif application_type == 'Both':
+        base_pattern = f"APP_BOTH_{advisor.initial}_{timestamp}"
+    else:
+        base_pattern = f"APP_{advisor.initial}_{timestamp}"
+
+    # Count existing applications with the same base pattern
+    existing_count = Application.objects.filter(
+        application_number__startswith=base_pattern
+    ).count()
+
+    return f"{base_pattern}_{existing_count +1:03d}"
+
+# models.py - Update Advisor model
 class Advisor(AbstractUser):
     # Custom fields matching your SQL table
     date_of_birth = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     license_number = models.CharField(max_length=50, unique=True, null=True, blank=True)
     specialization = models.CharField(
-        max_length=100, 
+        max_length=100,
         blank=True,
         help_text='e.g., Mortgages, Life Insurance, Property Insurance'
     )
@@ -46,13 +78,46 @@ class Advisor(AbstractUser):
     notes = models.TextField(blank=True, null=True)
     # Override email field to make it unique and required
     email = models.EmailField(unique=True, blank=False)
-    
+
     # Override first_name and last_name to make them required
     first_name = models.CharField(max_length=50, blank=False)
     last_name = models.CharField(max_length=50, blank=False)
 
+    # Add profile image field
+    profile_image = models.ImageField(
+        upload_to='profile_images/advisor_profiles/%Y/%m/%d/',
+        null=True,
+        blank=True,
+        default='advisor_profiles/default.png'
+    )
+
+    # Add initial field for 2-character short name
+    initial = models.CharField(
+        max_length=3,
+        unique=True,
+        blank=True,
+        null=True,
+        help_text='2-character unique initial (e.g., JD for John Doe)'
+    )
+
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def save(self, *args, **kwargs):
+        # Generate initial from first and last name if not provided
+        if not self.initial:
+            self.initial = self.generate_initial()
+        super().save(*args, **kwargs)
+
+    def generate_initial(self):
+        """Generate 2-character initial from first and last name"""
+        if self.first_name and self.last_name:
+            return (self.first_name[0] + self.last_name[0]).upper()
+        elif self.first_name:
+            return self.first_name[:2].upper()
+        elif self.last_name:
+            return self.last_name[:2].upper()
+        return "AD"  # Default fallback
 
     class Meta:
         # Add indexes similar to your SQL table
@@ -60,8 +125,9 @@ class Advisor(AbstractUser):
             models.Index(fields=['email'], name='idx_advisor_email'),
             models.Index(fields=['license_number'], name='idx_advisor_license'),
             models.Index(fields=['active'], name='idx_advisor_active'),
+            models.Index(fields=['initial'], name='idx_advisor_initial'),
         ]
-        
+
         # Optional: set the database table name explicitly
         db_table = 'advisor'
 
@@ -154,9 +220,7 @@ class Mortgage(models.Model):
         ('Withdrawn', 'Withdrawn'),
     ]
 
-    mortgage_id = models.CharField(max_length=50,primary_key=True,
-        default=generate_insurance_id,  # Use the custom function here
-        )
+    mortgage_id = models.CharField(max_length=50,primary_key=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     advisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     property_address = models.TextField()
@@ -199,10 +263,11 @@ class Mortgage(models.Model):
         super().save(*args, **kwargs)
 
         # Only create application for new mortgages that don't already have one
-        if is_new and not hasattr(self, 'application'):
-            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-            application_number = f"APP_MRT_{self.advisor.id}_{timestamp}"
-
+        if is_new and not hasattr(self, 'application') and not kwargs.get('from_application', False):
+            application_number = generate_application_number(
+                self.advisor,
+                'Mortgage'
+            )
             Application.objects.create(
                 customer=self.customer,
                 application_type='Mortgage',
@@ -217,13 +282,13 @@ class Mortgage(models.Model):
 
 class InsurancePolicy(models.Model):
     POLICY_TYPES = [
-        ('Life Insurance', 'Life Insurance'),
-        ('Critical Illness', 'Critical Illness'),
-        ('Income Protection', 'Income Protection'),
-        ('Buildings Insurance', 'Buildings Insurance'),
-        ('Contents Insurance', 'Contents Insurance'),
-        ('Motor Insurance', 'Motor Insurance'),
-        ('Travel Insurance', 'Travel Insurance'),
+        ('Life Insurance', 'Life Insurance'),  # 15 chars
+        ('Critical Illness', 'Critical Illness'),  # 18 chars
+        ('Income Protection', 'Income Protection'),  # 18 chars
+        ('Buildings Insurance', 'Buildings Insurance'),  # 20 chars
+        ('Contents Insurance', 'Contents Insurance'),  # 19 chars
+        ('Motor Insurance', 'Motor Insurance'),  # 16 chars
+        ('Travel Insurance', 'Travel Insurance'),  # 17 chars
     ]
 
     FREQUENCY_CHOICES = [
@@ -242,9 +307,7 @@ class InsurancePolicy(models.Model):
         ('Renewed', 'Renewed'),
     ]
 
-    insurance_id = models.CharField(max_length=50,primary_key=True,
-                                    default=generate_insurance_id,
-                                    )
+    insurance_id = models.CharField(max_length=50,primary_key=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     advisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     policy_number = models.CharField(max_length=50, unique=True, null=True, blank=True)
@@ -285,10 +348,12 @@ class InsurancePolicy(models.Model):
         super().save(*args, **kwargs)
 
         # Only create application for new insurance policies that don't already have one
-        if is_new and not hasattr(self, 'application'):
-            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-            application_number = f"APP_INS_{self.advisor.id}_{timestamp}"
-
+        if is_new and not hasattr(self, 'application') and not kwargs.get('from_application', False):
+            application_number = generate_application_number(
+                self.advisor,
+                'Insurance',
+                self.policy_type
+            )
             Application.objects.create(
                 customer=self.customer,
                 application_type='Insurance',
@@ -367,7 +432,14 @@ class Application(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     insurance_type = models.CharField(max_length=50,choices= POLICY_TYPES, blank=True,null=True)
-    
+    # Add parent application field for "Both" type applications
+    parent_application = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='child_applications'
+    )
 
     class Meta:
         db_table = 'applications'
@@ -379,42 +451,58 @@ class Application(models.Model):
             models.Index(fields=['follow_up_date']),
             models.Index(fields=['submitted_date']),
         ]
+        unique_together = ('customer', 'advisor', 'insurance_type')
 
+    # In models.py - Update the Application model's save method
     def save(self, *args, **kwargs):
-
-
-        if not self.application_number:  # Generate application number if not set
+        if not self.application_number:
+            # Get the current timestamp without milliseconds
             timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
 
-            # Create insurance type abbreviation mapping
-            insurance_abbreviations = {
-                'Life Insurance': 'INS_LIFE',
-                'Critical Illness': 'INS_CI',
-                'Income Protection': 'INS_IP',
-                'Buildings Insurance': 'INS_BLDG',
-                'Contents Insurance': 'INS_CNT',
-                'Motor Insurance': 'INS_MOTOR',
-                'Travel Insurance': 'INS_TRVL',
-                'Mortgage': 'MORT',  # For mortgage applications
-                'Both': 'COMB'       # For combined applications
-            }
+            # Create base pattern for counting
+            base_pattern = f"APP_{self.advisor.initial}_{timestamp}"
 
-            # Determine the prefix based on application type
             if self.application_type == 'Insurance' and self.insurance_type:
+                # Get insurance abbreviation
+                insurance_abbreviations = {
+                    'Life Insurance': 'LIFE',
+                    'Critical Illness': 'CI',
+                    'Income Protection': 'IP',
+                    'Buildings Insurance': 'BLDG',
+                    'Contents Insurance': 'CNT',
+                    'Motor Insurance': 'MOTOR',
+                    'Travel Insurance': 'TRVL',
+                    'Mortgage': 'MORT',
+                    'Both': 'COMB'
+                }
                 prefix = insurance_abbreviations.get(self.insurance_type, 'INS')
-                app_number = f"APP-{prefix}_{self.advisor.id}_{timestamp}"
+                base_pattern = f"APP_INS_{prefix}_{self.advisor.initial}_{timestamp}"
             elif self.application_type == 'Mortgage':
-                prefix = 'MORT'
-                app_number = f"APP-{prefix}_{self.advisor.id}_{timestamp}"
-            elif self.application_type == 'Both':
-                prefix = 'COMB'
-                app_number = f"APP_{prefix}-{self.advisor.id}_{timestamp}"
+                base_pattern = f"APP_MORT_{self.advisor.initial}_{timestamp}"
             else:
-                prefix = 'APP'  # Default fallback
-                app_number = f"{prefix}_{self.advisor.id}_{timestamp}"
+                base_pattern = f"APP_{self.advisor.initial}_{timestamp}"
 
-            self.application_number = app_number
+            # Count existing applications with the same base pattern
+            existing_count = Application.objects.filter(
+                application_number__startswith=base_pattern
+            ).count()
+
+            # Generate the application number with sequential counter
+            self.application_number = f"{base_pattern}_{existing_count + 1:03d}"
+
         super().save(*args, **kwargs)
+
+    def get_related_applications(self):
+        """Get all applications related to this one (children or siblings)"""
+        if self.parent_application:
+            # This is a child application, return all siblings
+            return self.parent_application.child_applications.exclude(pk=self.pk)
+        elif self.application_type == 'Both':
+            # This is a parent application, return all children
+            return self.child_applications.all()
+        else:
+            # Regular application, return empty queryset
+            return Application.objects.none()
 
     def __str__(self):
         return f"{self.application_number} - {self.customer} - {self.application_type}"

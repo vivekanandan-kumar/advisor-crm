@@ -20,20 +20,47 @@
                 <h5 class="card-title mb-0">Advisor Information</h5>
             </div>
             <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <strong>Name:</strong>
+                <div class="row mb-4">
+                    <div class="col-md-3 text-center">
+                        {% if advisor.profile_image %}
+                            <img src="{{ advisor.profile_image.url }}"
+                                 alt="{{ advisor.first_name }} {{ advisor.last_name }}"
+                                 class="rounded-circle mb-2" width="100" height="100"
+                                 style="object-fit: cover; border: 3px solid #dee2e6;">
+                        {% else %}
+                            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-2"
+                                 style="width: 100px; height: 100px;">
+                                <i class="bi bi-person text-white" style="font-size: 2.5rem;"></i>
+                            </div>
+                        {% endif %}
                     </div>
-                    <div class="col-sm-9">
-                        {{ advisor.first_name }} {{ advisor.last_name }}
+                    <div class="col-md-9">
+                        <h3>{{ advisor.first_name }} {{ advisor.last_name }}</h3>
+                        <p class="text-muted mb-0">{{ advisor.email }}</p>
+                        <p class="mb-0">
+                            <span class="badge {% if advisor.active %}bg-success{% else %}bg-danger{% endif %} me-1">
+                                {% if advisor.active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                            <span class="badge {% if advisor.is_manager %}bg-warning{% else %}bg-info{% endif %}">
+                                {% if advisor.is_manager %}Manager{% else %}Advisor{% endif %}
+                            </span>
+                        </p>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-3">
-                        <strong>Email:</strong>
+                        <strong>Username:</strong>
                     </div>
                     <div class="col-sm-9">
-                        {{ advisor.email }}
+                        {{ advisor.username }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3">
+                        <strong>Initial:</strong>
+                    </div>
+                    <div class="col-sm-9">
+                        <span class="badge bg-primary">{{ advisor.initial }}</span>
                     </div>
                 </div>
                 <div class="row mb-3">
@@ -74,26 +101,6 @@
                     </div>
                     <div class="col-sm-9">
                         {{ advisor.hire_date|date:"M d, Y" }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <strong>Status:</strong>
-                    </div>
-                    <div class="col-sm-9">
-                        <span class="badge {% if advisor.active %}bg-success{% else %}bg-danger{% endif %}">
-                            {% if advisor.active %}Active{% else %}Inactive{% endif %}
-                        </span>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <strong>Role:</strong>
-                    </div>
-                    <div class="col-sm-9">
-                        <span class="badge {% if advisor.is_manager %}bg-warning{% else %}bg-info{% endif %}">
-                            {% if advisor.is_manager %}Manager{% else %}Advisor{% endif %}
-                        </span>
                     </div>
                 </div>
                 <div class="row mb-3">

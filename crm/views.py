@@ -33,7 +33,7 @@ from .models import (
     Customer, Mortgage, InsurancePolicy, Application, Advisor,
     Document, Communication, Commission, Payment, CommissionWeek, 
     CommissionMapping, Application, CommissionDispute,  # Add CommissionMapping here
-    DailyAdvisorActivity
+    DailyAdvisorActivity,generate_insurance_id,generate_application_number
 )
 from .forms import (
     DocumentForm, PaymentForm, CustomerForm,CommissionWeekForm,  MortgageForm, InsurancePolicyForm,
@@ -160,17 +160,22 @@ class AdvisorDetailView(LoginRequiredMixin, DetailView):
     template_name = 'crm/advisor_detail.html'
     context_object_name = 'advisor'
 
-class AdvisorCreateView(LoginRequiredMixin, CreateView):
-    model = User  # Use User instead of Advisor
+class AdvisorUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
     form_class = AdvisorForm
     template_name = 'crm/advisor_form.html'
     success_url = reverse_lazy('advisor_list')
 
-class AdvisorUpdateView(LoginRequiredMixin, UpdateView):
-    model = User  # Use User instead of Advisor
+    def form_valid(self, form):
+        messages.success(self.request, f'Advisor {self.object} updated successfully!')
+        return super().form_valid(form)
+
+
+class AdvisorCreateView(CreateView):
+    model = Advisor
     form_class = AdvisorForm
     template_name = 'crm/advisor_form.html'
-    success_url = reverse_lazy('advisor_list')
+    success_url = '/advisor/list/'
 
 # Add AdvisorDeleteView
 class AdvisorDeleteView(LoginRequiredMixin, DeleteView):
@@ -643,7 +648,6 @@ class ApplicationDetailView(LoginRequiredMixin, DetailView):
         return redirect('application_detail', pk=application.pk)
 
 
-
 class ApplicationCreateView(LoginRequiredMixin, CreateView):
     model = Application
     form_class = ApplicationForm
@@ -651,21 +655,45 @@ class ApplicationCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('application_list')
 
     def form_valid(self, form):
-        form.instance.advisor = self.request.user
-        
-        # Handle multiple applications creation here
-        # You'll need to override the post method similar to the function-based view
-        
-        messages.success(self.request, 'Application created successfully!')
-        return super().form_valid(form)
+        customer = form.cleaned_data['customer']
+        advisor = self.request.user
+        application_type = form.cleaned_data['application_type']
+        insurance_type = form.cleaned_data.get('insurance_type')
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['customer'].queryset = Customer.objects.all()
-        form.fields['mortgage'].queryset = Mortgage.objects.all()
-        form.fields['insurance'].queryset = InsurancePolicy.objects.all()
-        return form
+        try:
+            with transaction.atomic():
+                # Try to get the existing application, or create a new one
+                application, created = Application.objects.get_or_create(
+                    customer=customer,
+                    advisor=advisor,
+                    application_type=application_type,
+                    insurance_type=insurance_type,
+                    defaults={
+                        'mortgage': form.cleaned_data.get('mortgage'),
+                        'insurance': form.cleaned_data.get('insurance'),
+                        'status': form.cleaned_data.get('status', 'Initial Contact'),
+                        'priority': form.cleaned_data.get('priority', 'Medium'),
+                    }
+                )
 
+                # If a new application was created, update its number
+                if created:
+                    application.application_number = generate_application_number(
+                        advisor,
+                        application_type,
+                        insurance_type
+                    )
+                    application.save()
+                    messages.success(self.request,
+                                     f"Application {application.application_number} created successfully!")
+                    return redirect('application_detail', pk=application.pk)
+                else:
+                    messages.info(self.request, "An application for this customer already exists.")
+                    return redirect('application_detail', pk=application.pk)
+
+        except Exception as e:
+            messages.error(self.request, f"An error occurred: {e}")
+            return redirect('application_list')
 class ApplicationUpdateView(LoginRequiredMixin, UpdateView):
     model = Application
     form_class = ApplicationForm
@@ -733,162 +761,79 @@ class ApplicationUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, 'Application updated successfully!')
         return super().form_valid(form)
 
+
 @login_required
+@require_http_methods(["POST", "GET"])
 def application_create_view(request):
     """Function-based view for creating applications with multi-select"""
-    print(f"DEBUG: Request method: {request.method}")
-    
     if request.method == 'POST':
         form = ApplicationForm(request.POST)
-        print(f"DEBUG: Form is valid: {form.is_valid()}")
-        
-        # Debug: Print form errors if any
-        if not form.is_valid():
-            print(f"DEBUG: Form errors: {form.errors}")
-            print(f"DEBUG: Form non-field errors: {form.non_field_errors}")
-        
         if form.is_valid():
             application_data = form.cleaned_data
-            
-            # Get selected insurance types and mortgages
-            insurance_types = request.POST.get('selected_insurance_types', '').split(',')
-            mortgage_ids = request.POST.get('selected_mortgages', '').split(',')
-            
-            # Filter out empty strings
+            insurance_types = request.POST.getlist('insurance_types')
+            mortgage_ids = request.POST.getlist('mortgage_ids')
+
+            customer = application_data['customer']
+            advisor = request.user
+            application_type = application_data['application_type']
+
             insurance_types = [t for t in insurance_types if t]
-            mortgage_ids = [m for m in mortgage_ids if m]  # Keep as strings since mortgage_id is CharField
-            
-            print(f"DEBUG: Insurance types: {insurance_types}")
-            print(f"DEBUG: Mortgage IDs: {mortgage_ids}")
-            
-            # Validate that at least one option is selected based on application type
-            app_type = application_data['application_type']
-            
-            if app_type == 'Mortgage' and not mortgage_ids:
-                form.add_error(None, 'Please select at least one mortgage for mortgage applications.')
-            elif app_type == 'Insurance' and not insurance_types:
-                form.add_error(None, 'Please select at least one insurance type for insurance applications.')
-            elif app_type == 'Both' and (not mortgage_ids or not insurance_types):
-                form.add_error(None, 'Please select at least one mortgage and one insurance type for "Both" applications.')
-            
-            # If we added errors, don't proceed
-            if form.errors:
-                print(f"DEBUG: Added validation errors: {form.errors}")
-            else:
-                try:
-                    with transaction.atomic():
-                        applications_created = 0
-                        
-                        # Create insurance abbreviation mapping
-                        insurance_abbreviations = {
-                            'Life Insurance': 'LIFE',
-                            'Critical Illness': 'CI',
-                            'Income Protection': 'IP',
-                            'Buildings Insurance': 'BLDG',
-                            'Contents Insurance': 'CNT',
-                            'Motor Insurance': 'MOTOR',
-                            'Travel Insurance': 'TRVL'
-                        }
-                        
-                        # Create applications for each selected mortgage
-                        for mortgage_id in mortgage_ids:
-                            try:
-                                # Use mortgage_id field instead of id
-                                mortgage = Mortgage.objects.get(mortgage_id=mortgage_id)
-                                
-                                # Generate application number for mortgage
-                                timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-                                application_number = f"APP_MRT_{request.user.id}_{timestamp}_{applications_created}"
-                                
-                                # Create application linked to existing mortgage
-                                application = Application.objects.create(
-                                    customer=application_data['customer'],
-                                    application_type='Mortgage',
-                                    application_status=application_data['application_status'],
-                                    application_priority=application_data['application_priority'],
-                                    submitted_date=application_data['submitted_date'],
-                                    expected_completion_date=application_data['expected_completion_date'],
-                                    solicitor_name=application_data['solicitor_name'],
-                                    follow_up_date=application_data['follow_up_date'],
-                                    advisor_notes=application_data['advisor_notes'],
-                                    internal_notes=application_data['internal_notes'],
-                                    decline_reason=application_data['decline_reason'],
-                                    mortgage=mortgage,  # Link to existing mortgage
-                                    advisor=request.user,
-                                    application_number=application_number
-                                )
-                                applications_created += 1
-                                print(f"DEBUG: Created mortgage application: {application}")
-                                
-                            except Mortgage.DoesNotExist:
-                                messages.warning(request, f'Mortgage with ID {mortgage_id} not found')
-                        
-                        # Create applications for each selected insurance type
-                        # Create applications for each selected insurance type
-                        for insurance_type in insurance_types:
-                            # Generate a more unique timestamp with milliseconds
-                            timestamp = timezone.now().strftime('%Y%m%d%H%M%S%f')[:-3]  # Includes milliseconds
+            mortgage_ids = [m for m in mortgage_ids if m]
 
-                            prefix = insurance_abbreviations.get(insurance_type, 'INS')
-                            application_number = f"APP_INS_{prefix}_{request.user.id}_{timestamp}_{applications_created}"
+            with transaction.atomic():
+                newly_created_count = 0
 
-                            # Generate insurance ID with a more unique timestamp
-                            insurance_timestamp = timezone.now().strftime('%Y%m%d%H%M%S%f')[:-3]
-                            insurance_id = f"INS_{request.user.id}_{insurance_timestamp}_{applications_created}"
+                # Handle Insurance Applications
+                for insurance_type in insurance_types:
+                    try:
+                        # get_or_create handles the race condition atomically
+                        Application.objects.get_or_create(
+                            customer=customer,
+                            advisor=advisor,
+                            application_type=application_type,
+                            insurance_type=insurance_type,
+                            defaults={
+                                'application_number': generate_application_number(advisor, application_type,
+                                                                                  insurance_type),
+                                'application_status': 'Initial Contact'
+                            }
+                        )
+                        newly_created_count += 1
+                    except IntegrityError:
+                        # An application for this customer, advisor, and insurance_type already exists.
+                        # Do nothing and continue to the next item in the list.
+                        pass
 
-                            # Create insurance policy first with 0 default values
-                            insurance_policy = InsurancePolicy.objects.create(
-                                customer=application_data['customer'],
-                                advisor=request.user,
-                                policy_type=insurance_type,
-                                coverage_amount=Decimal('0.00'),  # Set to 0
-                                premium_amount=Decimal('0.00'),   # Set to 0
-                                premium_frequency='Monthly', 
-                                insurance_company='Default',      # Default value
-                                policy_start_date=timezone.now().date(),
-                                policy_status='Quote',
-                                insurance_id=insurance_id
-                            )
+                # Handle Mortgage Applications
+                for mortgage_id in mortgage_ids:
+                    try:
+                        Application.objects.get_or_create(
+                            customer=customer,
+                            advisor=advisor,
+                            application_type=application_type,
+                            mortgage_id=mortgage_id,
+                            defaults={
+                                'application_number': generate_application_number(advisor, application_type,
+                                                                                  "Mortgage"),
+                                'application_status': 'Initial Contact'
+                            }
+                        )
+                        newly_created_count += 1
+                    except IntegrityError:
+                        pass
 
-                            # Create application linked to the new insurance policy
-                            application = Application.objects.create(
-                                customer=application_data['customer'],
-                                application_type='Insurance',
-                                application_status=application_data['application_status'],
-                                application_priority=application_data['application_priority'],
-                                submitted_date=application_data['submitted_date'],
-                                expected_completion_date=application_data['expected_completion_date'],
-                                follow_up_date=application_data['follow_up_date'],
-                                advisor_notes=application_data['advisor_notes'],
-                                internal_notes=application_data['internal_notes'],
-                                decline_reason=application_data['decline_reason'],
-                                insurance=insurance_policy,  # Link to the insurance policy
-                                insurance_type=insurance_type,
-                                advisor=request.user,
-                                application_number=application_number
-                            )
-                            applications_created += 1  # Make sure this is incremented
-                            print(f"DEBUG: Created insurance application: {application}")
-                    
-                    if applications_created > 0:
-                        messages.success(request, f'{applications_created} application(s) created successfully!')
-                        return redirect('application_list')
-                    else:
-                        messages.warning(request, 'No applications were created.')
-                        
-                except Exception as e:
-                    print(f"ERROR: {str(e)}")
-                    messages.error(request, f'Error creating applications: {str(e)}')
+                if newly_created_count > 0:
+                    messages.success(request, f'{newly_created_count} new application(s) created successfully!')
+                    return redirect('application_list')
+                else:
+                    messages.info(request, 'No new applications were created as they may already exist.')
+                    return redirect('application_create')
         else:
-            print(f"DEBUG: Form is not valid. Errors: {form.errors}")
-            messages.error(request, 'Please correct the errors in the form.')
-    
+            messages.error(request, 'Error creating application. Please check the form for errors.')
+            return render(request, 'crm/application_form.html', {'form': form})
     else:
         form = ApplicationForm()
-    
-    return render(request, 'crm/application_form.html', {
-        'form': form,
-    })
+        return render(request, 'crm/application_form.html', {'form': form})
 
 @login_required
 def insurance_communication_create(request, insurance_id):

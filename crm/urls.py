@@ -15,6 +15,7 @@ urlpatterns = [
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
 
+
     # Advisor
     path('advisor/', views.AdvisorListView.as_view(), name='advisor_list'),
     path('advisor/add/', views.AdvisorCreateView.as_view(), name='advisor_create'),
